@@ -8,10 +8,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
 
 @EqualsAndHashCode
-@ToString
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class UserAuthorizationInfo {
     
