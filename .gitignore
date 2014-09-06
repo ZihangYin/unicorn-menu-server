@@ -1,4 +1,7 @@
 *.class
+.project
+.classpath
+.settings
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
@@ -7,6 +10,23 @@
 *.jar
 *.war
 *.ear
+
+# Maven Build Target #
+target/*
+# Application logs
+logs/*
+# Tmporary
+tmp/*
+
+dependency-reduced-pom.xml
+# private key store and trust store file
+unicorn-keystore
+unicorn-truststore
+
+src/main/resources/dynamodb.credentials
+src/main/resources/https-certificates.properties
+src/test/resources/dynamodb.credentials
+src/test/resources/test-https-certificates.properties
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*

@@ -1,0 +1,42 @@
+#!/bin/sh
+
+# Run "sh startup target/Unicorn-0.0.1-SNAPSHOT.jar" to start web service
+# Run "kill `cat tmp/processmanager.pid`" or "sh stop" to stop web service
+
+# If a specific java binary isn't specified search for the standard 'java' binary
+if [ -n "$JAVA_HOME"  ] ; then
+  if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+    # IBM's JDK on AIX uses strange locations for the executables
+    JAVACMD="$JAVA_HOME/jre/sh/java"
+  else
+    JAVACMD="$JAVA_HOME/bin/java"
+  fi
+else
+  JAVACMD=`which java`
+fi
+
+if [ ! -x "$JAVACMD" ] ; then
+  echo "Error: JAVA_HOME is not defined correctly." 1>&2
+  echo "  We cannot execute $JAVACMD" 1>&2
+  exit 1
+fi
+
+if [ -z "$1" ] ; then
+  echo "Error: Application jar file is not defined correctly." 1>&2
+  exit 1
+fi
+
+LOG_DIR="logs"
+TMP_DIR="tmp"
+
+if [ ! -d "$LOG_DIR" ]; then
+  mkdir $LOG_DIR
+fi
+
+if [ ! -d "$TMP_DIR" ]; then
+  mkdir $TMP_DIR
+fi
+
+#TODO: consider using cronolog to rotate this process manager log hourly
+exec nohup "$JAVACMD" $JAVA_OPTS -Xms512m -Xmx2048m -jar "$1"  > "$LOG_DIR/processmanager.log" 2>&1 &
+echo $! > "$TMP_DIR/processmanager.pid"

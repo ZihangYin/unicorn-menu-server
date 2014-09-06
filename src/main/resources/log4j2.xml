@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+	<properties>
+		<property name="pattern">%d{ISO8601}{GMT+0} [%p] (%t) %C(line %L) - %m%n</property>
+	</properties>
+	
+	<appenders>
+	
+		<!-- TODO: Create own customized time based rolling file appender -->
+		<RollingFile name="Application" fileName="logs/application.log"
+				 filePattern="logs/$${date:yyyy-MM-dd}/application-%d{yyyy-MM-dd-HH}.log.gz">
+			<PatternLayout>
+				<pattern>${pattern}</pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy/><!-- Rotated every hour -->
+			</Policies>
+		</RollingFile>
+		
+		<RollingFile name="ServiceMonitor" fileName="logs/service_monitor.log"
+				 filePattern="logs/$${date:yyyy-MM-dd}/service_monitor-%d{yyyy-MM-dd-HH}.log.gz">
+			<PatternLayout>
+				<pattern>${pattern}</pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy /><!-- Rotated every hour -->
+			</Policies>
+		</RollingFile>
+	</appenders>
+		
+	<loggers>
+		<root level="DEBUG">
+			<appender-ref ref="Application"/> 
+		</root>
+        <!-- When additivity sets true, it means that parent-logger (in every case the root-logger) will also get the chance to log this stuff -->
+        <logger name="com.unicorn.rest.server.filter.ActivityLogFilter" additivity="FALSE" level="ALL">
+            <appender-ref ref="ServiceMonitor" level="DEBUG" />
+        </logger>
+        <logger name="com.unicorn.rest.server.monitor" additivity="FALSE" level="ALL">
+            <appender-ref ref="ServiceMonitor" level="DEBUG" />
+        </logger>
+	</loggers>
+	
+</configuration>
