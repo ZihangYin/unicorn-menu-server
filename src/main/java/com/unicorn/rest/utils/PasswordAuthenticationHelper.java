@@ -49,11 +49,13 @@ public class PasswordAuthenticationHelper {
      * @param persistedPassword @Nonnull
      * @param persistedSalt @Nonnull
      * @return
+     * @throws ValidationException 
      * @throws UnsupportedEncodingException
      * @throws NoSuchAlgorithmException
+
      */
     public static boolean authenticatePassword(@Nonnull String userPassword, @Nonnull ByteBuffer persistedPassword, @Nonnull ByteBuffer persistedSalt) 
-            throws UnsupportedEncodingException, NoSuchAlgorithmException {
+            throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
         return Arrays.equals(persistedPassword.array(), generateHashedPass(userPassword, persistedSalt));
     }
 
@@ -82,7 +84,7 @@ public class PasswordAuthenticationHelper {
      * @throws UnsupportedEncodingException
      * @throws NoSuchAlgorithmException
      */
-    public static @Nonnull ByteBuffer generateHashedPassWithSalt(@Nonnull String userPassword, @Nonnull ByteBuffer salt) 
+    public static @Nonnull ByteBuffer generateHashedPassWithSalt(@Nullable String userPassword, @Nonnull ByteBuffer salt) 
             throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
         if (!validateStrongPassword(userPassword)) {
             String errMsg = "Invalid password: the password must be at least 6 characters, no more than 20 characters and must have at least one numeric digit and one letter";

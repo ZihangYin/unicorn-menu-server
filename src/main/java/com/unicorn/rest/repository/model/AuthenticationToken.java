@@ -1,6 +1,7 @@
 package com.unicorn.rest.repository.model;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -32,11 +33,11 @@ public class AuthenticationToken {
             return tokenType;
         }
         
-        public static AuthenticationTokenType fromString(String tokenType) throws ValidationException {
+        public static AuthenticationTokenType fromString(@Nullable String tokenType) throws ValidationException {
             if (ACCESS_TOKEN.toString().equals(tokenType)) {
                 return AuthenticationTokenType.ACCESS_TOKEN;
             } 
-            throw new ValidationException("The authentication token type %s is invalid");
+            throw new ValidationException(String.format("The authentication token type %s is not supported by the authorization server.", tokenType));
         }
     }
     

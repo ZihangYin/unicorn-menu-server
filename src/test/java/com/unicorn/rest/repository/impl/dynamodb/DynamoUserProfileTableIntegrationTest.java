@@ -40,7 +40,7 @@ public class DynamoUserProfileTableIntegrationTest {
         ByteBuffer password = PasswordAuthenticationHelper.generateHashedPassWithSalt("1a2b3c", salt);
 
         try {
-            userProfileTable.createUser(userId, password, salt, userDisplayName);
+            userProfileTable.createUser(userId, userDisplayName, password, salt);
             UserAuthorizationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userId);
             assertEquals(userId, userAuthorizationInfo.getUserId());
             assertEquals(password, userAuthorizationInfo.getPassword());
@@ -75,9 +75,9 @@ public class DynamoUserProfileTableIntegrationTest {
         ByteBuffer password1 = PasswordAuthenticationHelper.generateHashedPassWithSalt("1a2b3c", salt1);
         ByteBuffer password2 = PasswordAuthenticationHelper.generateHashedPassWithSalt("3c2b1a", salt2);
         try {
-            userProfileTable.createUser(userId, password1, salt1, userDisplayName1);
+            userProfileTable.createUser(userId, userDisplayName1, password1, salt1);
             try {
-                userProfileTable.createUser(userId, password2, salt2, userDisplayName2);
+                userProfileTable.createUser(userId, userDisplayName2, password2, salt2);
             } catch(DuplicateKeyException error) {
                 UserAuthorizationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userId);
                 assertEquals(userId, userAuthorizationInfo.getUserId());

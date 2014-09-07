@@ -28,6 +28,7 @@ public class JSONObjectMapperImpl implements ContextResolver<ObjectMapper> {
         .setAnnotationIntrospector(createJaxbJacksonAnnotationIntrospector());
     }
 
+    @Override
     public ObjectMapper getContext(Class<?> type) {
         return defaultObjectMapper;
     }

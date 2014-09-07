@@ -89,6 +89,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
         }
     }
 
+    @Override
     public void createUserNameForUserId(@Nullable UserName userName, @Nullable Long userId) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
         if (userName == null || userId == null) {
@@ -98,6 +99,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
         createUserNameForUserId(new UserNameToUserIDItem(userName.getUserName(), userId, TimeUtils.getEpochTimeNowInUTC(), Long.MAX_VALUE));
     }
 
+    @Override
     public void updateUserNameForUserId(@Nullable UserName curUserName, @Nullable UserName newUserName, @Nullable Long userId) 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException {
         if (curUserName == null || newUserName == null || userId == null) {
@@ -118,7 +120,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
         deactivateUserNameForUserId(curUserNameStr, userId, curUserNameToUserIDItem.getActivateTime(), now);
     }
 
-
+    @Override
     public @Nonnull Long getCurrentUserId(@Nullable UserName userName) 
             throws ValidationException , ItemNotFoundException, RepositoryServerException {
         if (userName == null) {
@@ -127,6 +129,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
         return getCurrentUserIdForUserName(userName.getUserName());
     }
 
+    @Override
     public @Nonnull Long getUserIdAtTime(@Nullable UserName userName, @Nullable Long activeTime) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (userName == null || activeTime == null) {
@@ -136,6 +139,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
         return getUserIdForUserNameAtTime(userName.getUserName(), activeTime);
     }
 
+    @Override
     public @Nonnull String getUserName(@Nullable Long userId, boolean checkStaleness) 
             throws ValidationException, ItemNotFoundException, StaleDataException, RepositoryServerException {
         if (userId == null) {
@@ -327,7 +331,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
         
         GlobalSecondaryIndex userIdActivateInEpochGSI = new GlobalSecondaryIndex()
         .withIndexName(USER_ID_ACTIVATE_IN_EPOCH_GSI_KEY)
-        .withProvisionedThroughput(new ProvisionedThroughput(2L, 2L))
+        .withProvisionedThroughput(new ProvisionedThroughput(2L, 1L))
         .withProjection(new Projection().withProjectionType(ProjectionType.KEYS_ONLY))
         .withKeySchema(
                 new KeySchemaElement(USER_ID_KEY, KeyType.HASH),
@@ -336,7 +340,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
         
         GlobalSecondaryIndex userIdDeactivateInEpochGSI = new GlobalSecondaryIndex()
         .withIndexName(USER_ID_DEACTIVATE_IN_EPOCH_GSI_KEY)
-        .withProvisionedThroughput(new ProvisionedThroughput(2L, 2L))
+        .withProvisionedThroughput(new ProvisionedThroughput(2L, 1L))
         .withProjection(new Projection().withProjectionType(ProjectionType.KEYS_ONLY))
         .withKeySchema(
                 new KeySchemaElement(USER_ID_KEY, KeyType.HASH),
@@ -345,7 +349,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
 
         CreateTableRequest createTableRequest = new CreateTableRequest()
         .withTableName(USER_NAME_TO_ID_TABLE_NAME)
-        .withProvisionedThroughput(new ProvisionedThroughput(2L, 2L))
+        .withProvisionedThroughput(new ProvisionedThroughput(4L, 1L))
         .withAttributeDefinitions(
                 new AttributeDefinition(USER_NAME_KEY, ScalarAttributeType.S),
                 new AttributeDefinition(USER_ID_KEY, ScalarAttributeType.N),

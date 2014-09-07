@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 
@@ -52,7 +53,7 @@ public class UserPassAuthenticationHelperTest {
     }
     
     @Test
-    public void generateHashedPassWithSaltHappyCase() throws UnsupportedEncodingException, NoSuchAlgorithmException, ValidationException {
+    public void generateHashedPassWithSaltHappyCase() throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
         String passwordOne = "1a2b3c";  
         ByteBuffer saltOne = PasswordAuthenticationHelper.generateRandomSalt();
         
@@ -77,7 +78,18 @@ public class UserPassAuthenticationHelperTest {
     }
     
     @Test
-    public void authenticatePasswordHappyCase() throws UnsupportedEncodingException, NoSuchAlgorithmException, ValidationException {
+    public void generateHashedPassWithSaltWithNullPassword() throws UnsupportedEncodingException, NoSuchAlgorithmException {
+        ByteBuffer saltOne = PasswordAuthenticationHelper.generateRandomSalt();
+        try{
+            PasswordAuthenticationHelper.generateHashedPassWithSalt(null, saltOne);
+        } catch(ValidationException error) {
+            return;
+        }
+        fail("Failed while running generateHashedPassWithSaltWithNullPassword");
+    }
+    
+    @Test
+    public void authenticatePasswordHappyCase() throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
         String passwordOne = "1a2b3c";  
         ByteBuffer saltOne = PasswordAuthenticationHelper.generateRandomSalt();
         

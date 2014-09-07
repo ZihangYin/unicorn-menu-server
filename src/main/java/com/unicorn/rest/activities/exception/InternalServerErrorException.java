@@ -6,7 +6,7 @@ public class InternalServerErrorException extends RuntimeException {
     
     public static final String INTERNAL_FAILURE = "Internal Failure";
     private static final String ERROR_CODE = "internal_failure";
-    private static final String ERROR_DESCRIPTION = "The server encountered an internal error while attempting to fulfill the request";
+    private static final String ERROR_DESCRIPTION = "The server encountered an internal error while attempting to fulfill the request.";
     
     private final String errorCode;
     private final String errorDescription;

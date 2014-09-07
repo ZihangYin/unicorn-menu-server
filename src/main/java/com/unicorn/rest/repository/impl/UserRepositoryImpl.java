@@ -1,10 +1,15 @@
 package com.unicorn.rest.repository.impl;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
+
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.unicorn.rest.repository.UserRepository;
+import com.unicorn.rest.repository.exception.DuplicateKeyException;
 import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
@@ -16,6 +21,8 @@ import com.unicorn.rest.repository.table.EmailAddressToUserIdTable;
 import com.unicorn.rest.repository.table.MobilePhoneToUserIdTable;
 import com.unicorn.rest.repository.table.UserNameToUserIdTable;
 import com.unicorn.rest.repository.table.UserProfileTable;
+import com.unicorn.rest.utils.PasswordAuthenticationHelper;
+import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
 public class UserRepositoryImpl implements UserRepository {
 
@@ -32,21 +39,6 @@ public class UserRepositoryImpl implements UserRepository {
         this.mobilePhoneToUserIdTable = mobilePhoneToUserIdTable;
         this.emailAddressToUserIdTable = emailAddressToUserIdTable;
     }
-
-//    public @Nonnull String createUser(@Nullable UserAuthorizationInfo userAuthorizationInfo)
-//            throws RepositoryClientException, RepositoryServerException {
-//        /**
-//         * Simple-flake versus Snow-flake
-//         * https://blog.twitter.com/2010/announcing-snowflake
-//         * http://engineering.custommade.com/simpleflake-distributed-id-generation-for-the-lazy/
-//         * http://instagram-engineering.tumblr.com/post/10853187575/sharding-ids-at-instagram
-//         *  
-//         * For the sake of simplicity, we prefer the simple-flake approach for now.
-//         * More detail, refer to SimpleFlakeKeyGenerator class.
-//         */
-//
-//        return null;
-//    }
 
     @Override
     public Long getUserIdFromLoginName(String loginName) 
@@ -71,6 +63,19 @@ public class UserRepositoryImpl implements UserRepository {
     public UserAuthorizationInfo getUserAuthorizationInfo(Long userId) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         return userProfileTable.getUserAuthorizationInfo(userId);
+    }
+
+    @Override
+    public Long createUser(UserName userName, String userDisplayName,
+            String password) throws ValidationException, DuplicateKeyException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
+        
+        Long userId = SimpleFlakeKeyGenerator.generateKey();
+        ByteBuffer salt = PasswordAuthenticationHelper.generateRandomSalt();
+        ByteBuffer hasedPassword = PasswordAuthenticationHelper.generateHashedPassWithSalt(password, salt);
+        
+        userProfileTable.createUser(userId, userDisplayName, hasedPassword, salt);
+        userNameToUserIdTable.createUserNameForUserId(userName, userId);
+        return userId;
     }
 
 }

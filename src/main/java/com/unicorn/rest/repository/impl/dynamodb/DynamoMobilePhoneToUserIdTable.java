@@ -66,6 +66,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
         return new MobilePhone(countryCode, phoneNumber);
     }
 
+    @Override
     public void createMobilePhoneForUserId(@Nullable MobilePhone mobilePhone, @Nullable Long userId) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
         if (mobilePhone== null || userId == null) {
@@ -75,6 +76,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
         createMobilePhoneForUserId(mobilePhone, userId, TimeUtils.getEpochTimeNowInUTC());
     } 
 
+    @Override
     public void updateMobilePhoneForUserId(@Nullable MobilePhone curPhone, @Nullable MobilePhone newPhone, @Nullable Long userId) 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException {
         if (curPhone == null || newPhone == null || userId == null) {
@@ -93,6 +95,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
         deleteMobilePhoneForUserId(curPhone, userId);
     }
 
+    @Override
     public @Nonnull Long getUserId(@Nullable MobilePhone mobilePhone) 
             throws ValidationException , ItemNotFoundException, RepositoryServerException {
         if (mobilePhone == null) {
@@ -101,6 +104,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
         return getUserIdForMobilePhone(mobilePhone);
     }
 
+    @Override
     public @Nonnull MobilePhone getMobilePhone(@Nullable Long userId, boolean checkStaleness) 
             throws ValidationException, ItemNotFoundException, StaleDataException, RepositoryServerException {
         if (userId == null) {
@@ -223,7 +227,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
 
         GlobalSecondaryIndex userIdActivateInEpochGSI = new GlobalSecondaryIndex()
         .withIndexName(USER_ID_ACTIVATE_IN_EPOCH_GSI_KEY)
-        .withProvisionedThroughput(new ProvisionedThroughput(2L, 2L))
+        .withProvisionedThroughput(new ProvisionedThroughput(2L, 1L))
         .withProjection(new Projection().withProjectionType(ProjectionType.KEYS_ONLY))
         .withKeySchema(
                 new KeySchemaElement(USER_ID_KEY, KeyType.HASH),
@@ -240,7 +244,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
 
         CreateTableRequest createTableRequest = new CreateTableRequest()
         .withTableName(MOBILE_PHONE_TO_ID_TABLE_NAME)
-        .withProvisionedThroughput(new ProvisionedThroughput(2L, 2L))
+        .withProvisionedThroughput(new ProvisionedThroughput(4L, 1L))
         .withAttributeDefinitions(
                 new AttributeDefinition(PHONE_NUMBER_KEY, ScalarAttributeType.N),
                 new AttributeDefinition(COUNTRY_CODE_KEY, ScalarAttributeType.N),

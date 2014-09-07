@@ -58,6 +58,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
 
     private final DynamoDBDAO awsDynamoDBDAO = DynamoDBDAO.get();
     
+    @Override
     public void createEmailAddressForUserId(@Nullable EmailAddress emailAddress, @Nullable Long userId) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
         if (emailAddress == null || userId == null) {
@@ -68,6 +69,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
         createEmailAddressForUserId(emailAddress.getEmailAddress(), userId, TimeUtils.getEpochTimeNowInUTC());
     } 
 
+    @Override
     public void updateEmailAddressForUserId(@Nullable EmailAddress curEmailAddress, @Nullable EmailAddress newEmailAddress, @Nullable Long userId) 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException {
         if (curEmailAddress == null|| newEmailAddress == null || userId == null) {
@@ -87,6 +89,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
         deleteEmailAddressForUserId(curEmailAddressStr, userId);
     }
 
+    @Override
     public @Nonnull Long getUserId(@Nullable EmailAddress emailAddress) 
             throws ValidationException , ItemNotFoundException, RepositoryServerException {
         if (emailAddress == null) {
@@ -95,6 +98,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
         return getUserIdForEmailAddress(emailAddress.getEmailAddress());
     }
 
+    @Override
     public @Nonnull String getEmailAddress(@Nullable Long userId, boolean checkStaleness) 
             throws ValidationException, ItemNotFoundException, StaleDataException, RepositoryServerException {
         if (userId == null) {
@@ -215,7 +219,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
         
         GlobalSecondaryIndex userIdActivateInEpochGSI = new GlobalSecondaryIndex()
         .withIndexName(USER_ID_ACTIVATE_IN_EPOCH_GSI_KEY)
-        .withProvisionedThroughput(new ProvisionedThroughput(2L, 2L))
+        .withProvisionedThroughput(new ProvisionedThroughput(2L, 1L))
         .withProjection(new Projection().withProjectionType(ProjectionType.KEYS_ONLY))
         .withKeySchema(
                 new KeySchemaElement(USER_ID_KEY, KeyType.HASH),
@@ -224,7 +228,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
 
         CreateTableRequest createTableRequest = new CreateTableRequest()
         .withTableName(EMAIL_ADDRESS_TO_ID_TABLE_NAME)
-        .withProvisionedThroughput(new ProvisionedThroughput(2L, 2L))
+        .withProvisionedThroughput(new ProvisionedThroughput(4L, 1L))
         .withAttributeDefinitions(
                 new AttributeDefinition(EMAIL_ADDRESS_KEY, ScalarAttributeType.S),
                 new AttributeDefinition(USER_ID_KEY, ScalarAttributeType.N),

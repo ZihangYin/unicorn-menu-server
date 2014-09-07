@@ -52,7 +52,8 @@ public class DynamoUserProfileTable implements UserProfileTable {
 
     private final DynamoDBDAO awsDynamoDBDAO = DynamoDBDAO.get();
 
-    public Long createUser(@Nullable Long userId, @Nullable ByteBuffer password, @Nullable ByteBuffer salt, @Nullable String userDisplayName) 
+    @Override
+    public Long createUser(@Nullable Long userId, @Nullable String userDisplayName, @Nullable ByteBuffer password, @Nullable ByteBuffer salt) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
         if (userId == null || password == null || salt == null || userDisplayName == null) {
             throw new ValidationException(
@@ -63,6 +64,7 @@ public class DynamoUserProfileTable implements UserProfileTable {
         return userId;
     }
 
+    @Override
     public @Nonnull UserAuthorizationInfo getUserAuthorizationInfo(@Nullable Long userId) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (userId == null) {
@@ -148,7 +150,7 @@ public class DynamoUserProfileTable implements UserProfileTable {
 
         GlobalSecondaryIndex userDisplayNameGSI = new GlobalSecondaryIndex()
         .withIndexName(USER_DISPLAY_NAME_GSI_KEY)
-        .withProvisionedThroughput(new ProvisionedThroughput(2L, 2L))
+        .withProvisionedThroughput(new ProvisionedThroughput(2L, 1L))
         .withProjection(new Projection().withProjectionType(ProjectionType.KEYS_ONLY))
         .withKeySchema(
                 new KeySchemaElement(USER_DISPLAY_NAME_KEY, KeyType.HASH)
@@ -156,7 +158,7 @@ public class DynamoUserProfileTable implements UserProfileTable {
 
         CreateTableRequest createTableRequest = new CreateTableRequest()
         .withTableName(USER_PROFILE_TABLE_NAME)
-        .withProvisionedThroughput(new ProvisionedThroughput(2L, 2L))
+        .withProvisionedThroughput(new ProvisionedThroughput(4L, 1L))
         .withAttributeDefinitions(
                 new AttributeDefinition(USER_ID_KEY, ScalarAttributeType.N),
                 new AttributeDefinition(USER_DISPLAY_NAME_KEY, ScalarAttributeType.S))

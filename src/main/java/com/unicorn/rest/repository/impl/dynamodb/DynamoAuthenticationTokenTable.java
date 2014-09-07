@@ -213,7 +213,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
             throws RepositoryClientException, RepositoryServerException {
         CreateTableRequest createTableRequest = new CreateTableRequest()
         .withTableName(AUTHENTICATION_TOKEN_TABLE_NAME)
-        .withProvisionedThroughput(new ProvisionedThroughput(2L, 2L))
+        .withProvisionedThroughput(new ProvisionedThroughput(8L, 1L))
         .withAttributeDefinitions(
                 new AttributeDefinition(AUTHENTICATION_TOKEN_TYPE_KEY, ScalarAttributeType.S),
                 new AttributeDefinition(AUTHENTICATION_TOKEN_KEY, ScalarAttributeType.S))

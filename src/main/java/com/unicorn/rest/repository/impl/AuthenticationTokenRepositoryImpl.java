@@ -29,8 +29,7 @@ public class AuthenticationTokenRepositoryImpl implements AuthenticationTokenRep
 
     @Override
     public void persistToken(@Nullable AuthenticationToken authenticationToken) 
-            throws ValidationException, DuplicateKeyException, RepositoryServerException
-            {
+            throws ValidationException, DuplicateKeyException, RepositoryServerException {
         authenticationTokenTable.persistToken(authenticationToken);
     }
 

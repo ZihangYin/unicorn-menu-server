@@ -18,15 +18,15 @@ public interface UserProfileTable extends Table {
      * Create new user with required minimum parameters
      *  
      * @param userId
+     * @param userDisplayName
      * @param password
      * @param salt
-     * @param userDisplayName
      * @return
      * @throws ValidationException if request is invalid
      * @throws DuplicateKeyException if the user_id already exists
      * @throws RepositoryServerException internal server error
      */
-    public Long createUser(@Nullable Long userId, @Nullable ByteBuffer password, @Nullable ByteBuffer salt, @Nullable String userDisplayName) 
+    public Long createUser(@Nullable Long userId, @Nullable String userDisplayName, @Nullable ByteBuffer password, @Nullable ByteBuffer salt) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException;
     
     /**
