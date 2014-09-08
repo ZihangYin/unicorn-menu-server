@@ -22,19 +22,19 @@ public class AuthenticationTokenRepositoryImpl implements AuthenticationTokenRep
     }
     
     @Override
-    public @Nullable AuthenticationToken findToken(@Nullable AuthenticationTokenType tokenType, @Nullable String token) 
+    public AuthenticationToken findToken(AuthenticationTokenType tokenType, @Nullable String token) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         return authenticationTokenTable.getToken(tokenType, token);
     }
 
     @Override
-    public void persistToken(@Nullable AuthenticationToken authenticationToken) 
+    public void persistToken(AuthenticationToken authenticationToken) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
         authenticationTokenTable.persistToken(authenticationToken);
     }
 
     @Override
-    public void revokeToken(@Nullable AuthenticationTokenType tokenType, @Nullable String token) 
+    public void revokeToken(AuthenticationTokenType tokenType, String token) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         authenticationTokenTable.revokeToken(tokenType, token);
     }

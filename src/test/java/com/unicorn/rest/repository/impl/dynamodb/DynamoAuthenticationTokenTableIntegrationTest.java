@@ -14,6 +14,7 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryClientException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
+import com.unicorn.rest.repository.impl.dynamodb.DynamoAuthenticationTokenTable;
 import com.unicorn.rest.repository.model.AuthenticationToken;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 import com.unicorn.rest.utils.TimeUtils;

@@ -24,7 +24,6 @@ public class UserPassAuthenticationHelperTest {
     
     @Test
     public void validateStrongPassword() throws ValidationException {
-        assertFalse(PasswordAuthenticationHelper.validateStrongPassword(null));
         assertFalse(PasswordAuthenticationHelper.validateStrongPassword(new String()));
         assertFalse(PasswordAuthenticationHelper.validateStrongPassword(StringUtils.EMPTY));
         assertFalse(PasswordAuthenticationHelper.validateStrongPassword(StringUtils.SPACE));

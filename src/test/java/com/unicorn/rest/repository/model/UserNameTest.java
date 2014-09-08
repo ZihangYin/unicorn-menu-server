@@ -5,12 +5,13 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import com.unicorn.rest.repository.model.UserName;
+
 public class UserNameTest {
 
     @Test
     public void validateUserName() {
         
-        assertFalse(UserName.validateUserName(null));
         assertFalse(UserName.validateUserName(""));
         assertFalse(UserName.validateUserName(new String()));
         assertFalse(UserName.validateUserName("abcd"));

@@ -11,28 +11,29 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.UserAuthorizationInfo;
+import com.unicorn.rest.repository.model.UserDisplayName;
 
 @Singleton
 public interface UserProfileTable extends Table {
     /**
      * Create new user with required minimum parameters
      *  
-     * @param userId
-     * @param userDisplayName
-     * @param password
-     * @param salt
+     * @param userId @Nullable
+     * @param userDisplayName @Nullable
+     * @param password @Nullable
+     * @param salt @Nullable
      * @return
      * @throws ValidationException if request is invalid
      * @throws DuplicateKeyException if the user_id already exists
      * @throws RepositoryServerException internal server error
      */
-    public Long createUser(@Nullable Long userId, @Nullable String userDisplayName, @Nullable ByteBuffer password, @Nullable ByteBuffer salt) 
+    public Long createUser(@Nullable Long userId, @Nullable UserDisplayName userDisplayName, @Nullable ByteBuffer password, @Nullable ByteBuffer salt) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException;
     
     /**
      * Build user_authorization_info from attributes, which contains user_display_name, hashed password and salt.
      * 
-     * @param userId
+     * @param userId @Nullable
      * @return 
      * @throws ValidationException if request is invalid
      * @throws ItemNotFoundException if user_id does not exist

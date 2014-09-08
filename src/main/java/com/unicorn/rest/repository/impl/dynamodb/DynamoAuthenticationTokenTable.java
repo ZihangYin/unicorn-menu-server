@@ -64,7 +64,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
     public void persistToken(AuthenticationToken authenticationToken) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
         if (authenticationToken == null) {
-            throw new ValidationException("Expecting non-null request paramter for persistToken, but received: authenticationToken=null.");
+            throw new ValidationException("Expecting non-null request paramter for persistToken, but received: authenticationToken=null");
         }
         persistAuthenticationToken(authenticationToken);
     }
@@ -74,7 +74,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (tokenType == null || token == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for revokeToken, but received: authenticationToken=%s, authenticationToken=%s.", 
+                    String.format("Expecting non-null request paramter for revokeToken, but received: authenticationToken=%s, authenticationToken=%s", 
                             tokenType, token));
         }
         revokeAuthenticationToken(tokenType, token);
@@ -85,7 +85,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (tokenType == null || token == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for getToken, but received: authenticationToken=%s, authenticationToken=%s.", 
+                    String.format("Expecting non-null request paramter for getToken, but received: authenticationToken=%s, authenticationToken=%s", 
                             tokenType, token));
         }
         Map<String, AttributeValue> tokenAttrs = getAuthenticationToken(tokenType, token);
@@ -101,7 +101,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (tokenType == null || token == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for deleteToken, but received: authenticationToken=%s, authenticationToken=%s.", 
+                    String.format("Expecting non-null request paramter for deleteToken, but received: authenticationToken=%s, authenticationToken=%s", 
                             tokenType, token));
         }
         deleteExpiredAuthenticationToken(tokenType, token);

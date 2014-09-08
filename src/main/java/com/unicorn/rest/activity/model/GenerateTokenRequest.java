@@ -9,7 +9,7 @@ import lombok.Getter;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.unicorn.rest.activities.exception.TokenBadRequestException;
+import com.unicorn.rest.activities.exception.BadTokenRequestException;
 import com.unicorn.rest.activities.exception.TokenErrors.TokenErrCode;
 import com.unicorn.rest.activities.exception.TokenErrors.TokenErrDescFormatter;
 import com.unicorn.rest.activities.utils.RequestValidator;
@@ -44,21 +44,21 @@ public class GenerateTokenRequest {
     public static GenerateTokenRequest validateGenerateTokenRequest(@Nullable MultivaluedMap<String, String> multiValuedParameters) 
             throws ValidationException {
         if (CollectionUtils.sizeIsEmpty(multiValuedParameters)) {
-            throw new ValidationException("Expecting non-null request paramter for validateGenerateTokenRequest, but received: multiValuedParameters=null.");
+            throw new ValidationException("Expecting non-null request paramter for validateGenerateTokenRequest, but received: multiValuedParameters=null");
         }
 
         return new GenerateTokenRequest(multiValuedParameters.getFirst(GRANT_TYPE), 
                 multiValuedParameters.getFirst(LOGIN_NAME), multiValuedParameters.getFirst(PASSWORD));
     }
 
-    private GenerateTokenRequest(String grantType, String loginName, 
-            String password) throws ValidationException {
+    private GenerateTokenRequest(String grantType, String loginName, String password) 
+            throws ValidationException {
 
         if (PASSWORD.toString().equals(grantType)) {
             this.grantType = GrantType.PASSWORD;
         } else {
             RequestValidator.validateRequiredParameter(GRANT_TYPE, grantType); 
-            throw new TokenBadRequestException(TokenErrCode.UNSUPPORTED_GRANT_TYPE,  
+            throw new BadTokenRequestException(TokenErrCode.UNSUPPORTED_GRANT_TYPE,  
                     String.format(TokenErrDescFormatter.UNSUPPORTED_GRANT_TYPE.toString(), grantType));
         }
 

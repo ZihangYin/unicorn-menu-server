@@ -37,6 +37,7 @@ import com.unicorn.rest.repository.exception.RepositoryClientException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.UserAuthorizationInfo;
+import com.unicorn.rest.repository.model.UserDisplayName;
 import com.unicorn.rest.repository.table.UserProfileTable;
 
 public class DynamoUserProfileTable implements UserProfileTable {
@@ -53,14 +54,14 @@ public class DynamoUserProfileTable implements UserProfileTable {
     private final DynamoDBDAO awsDynamoDBDAO = DynamoDBDAO.get();
 
     @Override
-    public Long createUser(@Nullable Long userId, @Nullable String userDisplayName, @Nullable ByteBuffer password, @Nullable ByteBuffer salt) 
+    public Long createUser(@Nullable Long userId, @Nullable UserDisplayName userDisplayName, @Nullable ByteBuffer password, @Nullable ByteBuffer salt) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
-        if (userId == null || password == null || salt == null || userDisplayName == null) {
+        if (userId == null || userDisplayName == null || password == null || salt == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for createUser, but received: userId=%s, password=%s, salt=%s, userDisplayName=%s.", 
+                    String.format("Expecting non-null request paramter for createUser, but received: userId=%s, password=%s, salt=%s, userDisplayName=%s.=", 
                             userId, password, salt, userDisplayName));
         }
-        createUserProfile(userId, password, salt, userDisplayName);
+        createUserProfile(userId, password, salt, userDisplayName.getUserDisplayName());
         return userId;
     }
 
@@ -68,7 +69,7 @@ public class DynamoUserProfileTable implements UserProfileTable {
     public @Nonnull UserAuthorizationInfo getUserAuthorizationInfo(@Nullable Long userId) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (userId == null) {
-            throw new ValidationException("Expecting non-null request paramter for createUserNameForUserId, but received: userId=null.");
+            throw new ValidationException("Expecting non-null request paramter for createUserNameForUserId, but received: userId=null.=");
         }
 
         Map<String, AttributeValue> userAttrs = getUserInfo(userId, true, USER_DISPLAY_NAME_KEY, PASSWORD_KEY, SALT_KEY);

@@ -25,12 +25,13 @@ public class RevokeTokenRequest {
     public static RevokeTokenRequest validateRevokeTokenRequest(@Nullable MultivaluedMap<String, String> multiValuedParameters) 
             throws ValidationException {
         if (CollectionUtils.sizeIsEmpty(multiValuedParameters)) {
-            throw new ValidationException("Expecting non-null request paramter for validateRevokeTokenRequest, but received: multiValuedParameters=null.");
+            throw new ValidationException("Expecting non-null request paramter for validateRevokeTokenRequest, but received: multiValuedParameters=null");
         }
         return new RevokeTokenRequest(multiValuedParameters.getFirst(TOKEN_TYPE), multiValuedParameters.getFirst(TOKEN));
     }
 
-    private RevokeTokenRequest(@Nullable String tokenType, @Nullable String token) throws ValidationException {
+    private RevokeTokenRequest(@Nullable String tokenType, @Nullable String token) 
+            throws ValidationException {
         
         this.tokenType = AuthenticationTokenType.fromString(tokenType);
         this.token = RequestValidator.validateRequiredParameter(TOKEN, token);

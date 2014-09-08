@@ -11,7 +11,7 @@ import com.unicorn.rest.repository.impl.UserRepositoryImpl;
 public class TestRepositoryBinder extends AbstractBinder {
 
     private AuthenticationTokenRepositoryImpl mockedTokenRepository = Mockito.mock(AuthenticationTokenRepositoryImpl.class);
-    private UserRepositoryImpl mockedUserRepository = Mockito.mock(UserRepositoryImpl.class);;
+    private UserRepositoryImpl mockedUserRepository = Mockito.mock(UserRepositoryImpl.class);
 
     protected void configure() {
         bind(mockedTokenRepository).to(AuthenticationTokenRepository.class);

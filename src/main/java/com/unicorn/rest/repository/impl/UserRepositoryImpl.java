@@ -7,6 +7,8 @@ import java.security.NoSuchAlgorithmException;
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.unicorn.rest.repository.UserRepository;
 import com.unicorn.rest.repository.exception.DuplicateKeyException;
@@ -16,6 +18,7 @@ import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.EmailAddress;
 import com.unicorn.rest.repository.model.MobilePhone;
 import com.unicorn.rest.repository.model.UserAuthorizationInfo;
+import com.unicorn.rest.repository.model.UserDisplayName;
 import com.unicorn.rest.repository.model.UserName;
 import com.unicorn.rest.repository.table.EmailAddressToUserIdTable;
 import com.unicorn.rest.repository.table.MobilePhoneToUserIdTable;
@@ -25,7 +28,8 @@ import com.unicorn.rest.utils.PasswordAuthenticationHelper;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
 public class UserRepositoryImpl implements UserRepository {
-
+    private static final Logger LOG = LogManager.getLogger(UserRepositoryImpl.class);
+    
     private UserProfileTable userProfileTable;
     private UserNameToUserIdTable userNameToUserIdTable;
     private MobilePhoneToUserIdTable mobilePhoneToUserIdTable;
@@ -44,9 +48,12 @@ public class UserRepositoryImpl implements UserRepository {
     public Long getUserIdFromLoginName(String loginName) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (StringUtils.isBlank(loginName)) {
-            throw new ValidationException("Expecting non-null request paramter for getUserIdFromLoginName, but received: loginName=null.");
+            throw new ValidationException("Expecting non-null request paramter for getUserIdFromLoginName, but received: loginName=null");
         }
-        
+        /**
+         * TODO: user_name should in future contain at least one letter so that
+         * we can differentiate user_name from mobile_phone based on that
+         */
         if (loginName.startsWith("+")) {
             MobilePhone mobilePhone = new MobilePhone(loginName, null);
             return mobilePhoneToUserIdTable.getUserId(mobilePhone);
@@ -66,16 +73,39 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public Long createUser(UserName userName, String userDisplayName,
+    public Long createUser(UserName userName, UserDisplayName userDisplayName,
             String password) throws ValidationException, DuplicateKeyException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
         
         Long userId = SimpleFlakeKeyGenerator.generateKey();
         ByteBuffer salt = PasswordAuthenticationHelper.generateRandomSalt();
         ByteBuffer hasedPassword = PasswordAuthenticationHelper.generateHashedPassWithSalt(password, salt);
         
-        userProfileTable.createUser(userId, userDisplayName, hasedPassword, salt);
+        try {
+            userProfileTable.createUser(userId, userDisplayName, hasedPassword, salt);
+        } catch(DuplicateKeyException duplicateKeyOnce) {
+            /**
+             * Here we try one more time to create user record only if we get back DuplicateKeyException for user_id. 
+             * If we still fail after that, throw exception and log an error.
+             * 
+             * TODO: monitor how often this happens
+             */
+            LOG.warn( String.format("Failed to create user for user %s with user_id %s due to duplicate user_id already exists", userName, userId));
+            userId = SimpleFlakeKeyGenerator.generateKey();
+            try {
+                userProfileTable.createUser(userId, userDisplayName, hasedPassword, salt);
+            
+            } catch(DuplicateKeyException duplicateKeyAgain) {
+                LOG.error( String.format("Failed to create user for user %s with user_id %s for the second time  due to duplicate user_id already exists", 
+                        userName, userId));
+                throw new RepositoryServerException(duplicateKeyAgain);
+            }
+        }
+        /**
+         * TODO: If the following step failed later for whatever reason, we will
+         * have non-associated user_id record in the USER_PROFILE table. We should 
+         * add a sweeper to remove those records.
+         */
         userNameToUserIdTable.createUserNameForUserId(userName, userId);
         return userId;
     }
-
 }

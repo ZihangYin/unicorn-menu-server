@@ -71,7 +71,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
         if (mobilePhone== null || userId == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for createMobilePhoneForUserId, but received: mobilePhone=%s, userId=%s.", mobilePhone, userId));
+                    String.format("Expecting non-null request paramter for createMobilePhoneForUserId, but received: mobilePhone=%s, userId=%s", mobilePhone, userId));
         }
         createMobilePhoneForUserId(mobilePhone, userId, TimeUtils.getEpochTimeNowInUTC());
     } 
@@ -81,12 +81,10 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException {
         if (curPhone == null || newPhone == null || userId == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for updateMobilePhoneForUserId, but received: curPhone=%s, newPhone=%s, userId=%s.", 
+                    String.format("Expecting non-null request paramter for updateMobilePhoneForUserId, but received: curPhone=%s, newPhone=%s, userId=%s", 
                             curPhone, newPhone, userId));
         }
         
-        LOG.error(curPhone);
-        LOG.error(getMobilePhone(userId, false));
         if (!curPhone.equals(getMobilePhone(userId, false))) {
             throw new ItemNotFoundException();
         }
@@ -99,7 +97,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
     public @Nonnull Long getUserId(@Nullable MobilePhone mobilePhone) 
             throws ValidationException , ItemNotFoundException, RepositoryServerException {
         if (mobilePhone == null) {
-            throw new ValidationException("Expecting non-null request paramter for getUserId, but received: mobilePhone=null.");
+            throw new ValidationException("Expecting non-null request paramter for getUserId, but received: mobilePhone=null");
         }
         return getUserIdForMobilePhone(mobilePhone);
     }
@@ -108,7 +106,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
     public @Nonnull MobilePhone getMobilePhone(@Nullable Long userId, boolean checkStaleness) 
             throws ValidationException, ItemNotFoundException, StaleDataException, RepositoryServerException {
         if (userId == null) {
-            throw new ValidationException("Expecting non-null request paramter for getMobilePhone, but received: userId=null.");
+            throw new ValidationException("Expecting non-null request paramter for getMobilePhone, but received: userId=null");
         }
         return queryMobilePhoneForUserId(userId, checkStaleness);
     }

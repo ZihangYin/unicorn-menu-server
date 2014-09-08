@@ -17,7 +17,7 @@ public class MobilePhone {
 
     @Nonnull private final PhoneNumber mobilePhone ;
 
-    public MobilePhone(@Nullable String phone, @Nullable String region) throws ValidationException {
+    public MobilePhone(@Nonnull String phone, @Nullable String region) throws ValidationException {
         try {
             this.mobilePhone = PhoneNumberUtil.getInstance().parse(phone, region);
         } catch (NumberParseException error) {

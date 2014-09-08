@@ -94,7 +94,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
         if (userName == null || userId == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for createUserNameForUserId, but received: userName=%s, userId=%s.", userName, userId));
+                    String.format("Expecting non-null request paramter for createUserNameForUserId, but received: userName=%s, userId=%s", userName, userId));
         }
         createUserNameForUserId(new UserNameToUserIDItem(userName.getUserName(), userId, TimeUtils.getEpochTimeNowInUTC(), Long.MAX_VALUE));
     }
@@ -104,7 +104,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException {
         if (curUserName == null || newUserName == null || userId == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for updateUserNameForUserId, but received: curUserName=%s, newUserName=%s, userId=%s.",
+                    String.format("Expecting non-null request paramter for updateUserNameForUserId, but received: curUserName=%s, newUserName=%s, userId=%s",
                     curUserName, newUserName, userId));
         } 
         String curUserNameStr = curUserName.getUserName();
@@ -134,7 +134,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (userName == null || activeTime == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for getUserIdAtTime, but received: userName=%s, activeTime=%s.", userName, activeTime));
+                    String.format("Expecting non-null request paramter for getUserIdAtTime, but received: userName=%s, activeTime=%s", userName, activeTime));
         }
         return getUserIdForUserNameAtTime(userName.getUserName(), activeTime);
     }

@@ -13,10 +13,10 @@ import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationToken
 public interface AuthenticationTokenRepository {
 
     /**
-     * find authentication token from token type and token value
+     * Find authentication token from token type and token value
      * 
-     * @param tokenType
-     * @param token
+     * @param tokenType @Nullable
+     * @param token @Nullable
      * @return
      * @throws ValidationException if request is invalid
      * @throws ItemNotFoundException if authentication token attempted to find does not exist
@@ -26,9 +26,9 @@ public interface AuthenticationTokenRepository {
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
     
     /**
-     * persist authentication token 
+     * Persist authentication token 
      * 
-     * @param authenticationToken 
+     * @param authenticationToken  @Nullable
      * @throws ValidationException if request is invalid
      * @throws DuplicateKeyException if authentication token with same token type and token value already exists
      * @throws RepositoryServerException internal server error
@@ -37,10 +37,10 @@ public interface AuthenticationTokenRepository {
             throws ValidationException, DuplicateKeyException, RepositoryServerException;
     
     /**
-     * revoke authentication token
+     * Revoke authentication token
      * 
-     * @param tokenType
-     * @param token
+     * @param tokenType @Nullable
+     * @param token @Nullable
      * @throws ValidationException if request is invalid
      * @throws ItemNotFoundException if authentication token attempted to revoke does not exist
      * @throws RepositoryServerException internal server error

@@ -16,7 +16,9 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryClientException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
+import com.unicorn.rest.repository.impl.dynamodb.DynamoUserProfileTable;
 import com.unicorn.rest.repository.model.UserAuthorizationInfo;
+import com.unicorn.rest.repository.model.UserDisplayName;
 import com.unicorn.rest.utils.PasswordAuthenticationHelper;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
@@ -35,7 +37,7 @@ public class DynamoUserProfileTableIntegrationTest {
     public void testCreateUserHappyCase() 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
         Long userId = SimpleFlakeKeyGenerator.generateKey();
-        String userDisplayName = "userDisplayName";
+        UserDisplayName userDisplayName = new UserDisplayName("userDisplayName");
         ByteBuffer salt = PasswordAuthenticationHelper.generateRandomSalt();
         ByteBuffer password = PasswordAuthenticationHelper.generateHashedPassWithSalt("1a2b3c", salt);
 
@@ -68,8 +70,8 @@ public class DynamoUserProfileTableIntegrationTest {
     public void testCreateUserWithExistedUserId() 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
         Long userId = SimpleFlakeKeyGenerator.generateKey();
-        String userDisplayName1 = "userDisplayName1";
-        String userDisplayName2 = "userDisplayName2";
+        UserDisplayName userDisplayName1 = new UserDisplayName("userDisplayNameOne");
+        UserDisplayName userDisplayName2 = new UserDisplayName("userDisplayNameTwo");
         ByteBuffer salt1 = PasswordAuthenticationHelper.generateRandomSalt();
         ByteBuffer salt2 = PasswordAuthenticationHelper.generateRandomSalt();
         ByteBuffer password1 = PasswordAuthenticationHelper.generateHashedPassWithSalt("1a2b3c", salt1);

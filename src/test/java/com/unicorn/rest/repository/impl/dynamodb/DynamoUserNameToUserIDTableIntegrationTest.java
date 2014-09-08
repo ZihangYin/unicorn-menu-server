@@ -12,6 +12,7 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryClientException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
+import com.unicorn.rest.repository.impl.dynamodb.DynamoUserNameToUserIdTable;
 import com.unicorn.rest.repository.impl.dynamodb.DynamoUserNameToUserIdTable.UserNameToUserIDItem;
 import com.unicorn.rest.repository.model.UserName;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;

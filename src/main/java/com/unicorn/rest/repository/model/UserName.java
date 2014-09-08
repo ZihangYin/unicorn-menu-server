@@ -4,13 +4,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-
-import org.apache.commons.lang3.StringUtils;
 
 import com.unicorn.rest.repository.exception.ValidationException;
 
@@ -28,21 +25,19 @@ public class UserName {
 
     @Nonnull private final String userName;
 
-    public UserName(@Nullable String userName) throws ValidationException {
+    public UserName(@Nonnull String userName) throws ValidationException {
         if (!validateUserName(userName)) {
             String errMsg = "Invalid user name: %s. Only allows lower case alphanumeric characters, dashes and underscores. "
-                    + "The number of characters should be more than 5 and less than 15";
-            throw new ValidationException( String.format(errMsg, userName));
+                    + "The number of characters should be at least 5 and no more than 15";
+            throw new ValidationException(String.format(errMsg, userName));
         }
         this.userName = userName;
     }
 
-    public static boolean validateUserName(@Nullable String userName){
-        if (!StringUtils.isBlank(userName)) {
-            Matcher match = userNamePattern.matcher(userName);
-            if(match.matches()){
-                return true;
-            }
+    public static boolean validateUserName(@Nonnull String userName){
+        Matcher match = userNamePattern.matcher(userName);
+        if(match.matches()){
+            return true;
         }
         return false;
     }

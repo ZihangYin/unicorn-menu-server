@@ -17,7 +17,7 @@ public interface AuthenticationTokenTable extends Table {
     /**
      * Persist authentication token 
      * 
-     * @param authenticationToken
+     * @param authenticationToken @Nullable
      * @throws ValidationException if request is invalid
      * @throws DuplicateKeyException if authentication token with same token type and token value already exists
      * @throws RepositoryServerException internal server error
@@ -28,8 +28,8 @@ public interface AuthenticationTokenTable extends Table {
     /**
      * Revoke authentication token  
      * 
-     * @param tokenType
-     * @param token
+     * @param tokenType @Nullable
+     * @param token @Nullable
      * @throws ValidationException if request is invalid
      * @throws ItemNotFoundException if authentication token attempted to revoke does not exist
      * @throws RepositoryServerException internal server error
@@ -39,8 +39,9 @@ public interface AuthenticationTokenTable extends Table {
     
     /**
      * Get authentication token by looking up token type and token value
-     * @param tokenType
-     * @param token
+     * 
+     * @param tokenType @Nullable
+     * @param token @Nullable
      * @return
      * @throws ValidationException if request is invalid
      * @throws ItemNotFoundException if authentication token attempted to get does not exist
@@ -51,8 +52,9 @@ public interface AuthenticationTokenTable extends Table {
     
     /**
      * Delete expired authentication token
-     * @param tokenType
-     * @param token
+     * 
+     * @param tokenType @Nullable
+     * @param token @Nullable
      * @throws ValidationException
      * @throws ItemNotFoundException
      * @throws RepositoryServerException

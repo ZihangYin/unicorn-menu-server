@@ -33,12 +33,10 @@ public class PasswordAuthenticationHelper {
      * @param password @Nullable
      * @return
      */
-    public static boolean validateStrongPassword(@Nullable String password) {
-        if (!StringUtils.isBlank(password)) {
-            Matcher match = passwordPattern.matcher(password);
-            if(match.matches()){
-                return true;
-            }
+    public static boolean validateStrongPassword(@Nonnull String password) {
+        Matcher match = passwordPattern.matcher(password);
+        if(match.matches()){
+            return true;
         }
         return false;
     }
@@ -77,7 +75,7 @@ public class PasswordAuthenticationHelper {
     /**
      * This method is used to generate a new hashed password for plain-text password and salt provided by requester 
      * 
-     * @param userPassword @Nonnull
+     * @param userPassword @Nullable
      * @param salt @Nonnull
      * @return @Nonnull
      * @throws ValidationException
@@ -86,9 +84,8 @@ public class PasswordAuthenticationHelper {
      */
     public static @Nonnull ByteBuffer generateHashedPassWithSalt(@Nullable String userPassword, @Nonnull ByteBuffer salt) 
             throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
-        if (!validateStrongPassword(userPassword)) {
-            String errMsg = "Invalid password: the password must be at least 6 characters, no more than 20 characters and must have at least one numeric digit and one letter";
-            throw new ValidationException(errMsg);
+        if (StringUtils.isBlank(userPassword)) {
+            throw new ValidationException("Expecting non-null request paramter for generateHashedPassWithSalt, but received: userPassword=null");
         }
         return convertByteArrayToByteBuffer(generateHashedPass(userPassword, salt));
     }

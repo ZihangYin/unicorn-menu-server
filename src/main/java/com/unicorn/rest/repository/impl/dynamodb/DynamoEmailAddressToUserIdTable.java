@@ -63,7 +63,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
         if (emailAddress == null || userId == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for createEmailAddressForUserId, but received: emailAddress=%s, userId=%s.", 
+                    String.format("Expecting non-null request paramter for createEmailAddressForUserId, but received: emailAddress=%s, userId=%s", 
                             emailAddress, userId));
         }
         createEmailAddressForUserId(emailAddress.getEmailAddress(), userId, TimeUtils.getEpochTimeNowInUTC());
@@ -74,7 +74,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException {
         if (curEmailAddress == null|| newEmailAddress == null || userId == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for updateEmailAddressForUserId, but received: curEmailAddress=%s, newEmailAddress=%s, userId=%s.", 
+                    String.format("Expecting non-null request paramter for updateEmailAddressForUserId, but received: curEmailAddress=%s, newEmailAddress=%s, userId=%s", 
                             curEmailAddress, newEmailAddress, userId));
         }
         
@@ -93,7 +93,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
     public @Nonnull Long getUserId(@Nullable EmailAddress emailAddress) 
             throws ValidationException , ItemNotFoundException, RepositoryServerException {
         if (emailAddress == null) {
-            throw new ValidationException("Expecting non-null request paramter for getUserId, but received: emailAddress=null.");
+            throw new ValidationException("Expecting non-null request paramter for getUserId, but received: emailAddress=null");
         }
         return getUserIdForEmailAddress(emailAddress.getEmailAddress());
     }
@@ -102,7 +102,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
     public @Nonnull String getEmailAddress(@Nullable Long userId, boolean checkStaleness) 
             throws ValidationException, ItemNotFoundException, StaleDataException, RepositoryServerException {
         if (userId == null) {
-            throw new ValidationException("Expecting non-null request paramter for getEmailAddress, but received: userId=null.");
+            throw new ValidationException("Expecting non-null request paramter for getEmailAddress, but received: userId=null");
         }
         return queryEmailAddressForUser(userId, checkStaleness);
     }

@@ -37,7 +37,7 @@ public class AuthenticationToken {
             if (ACCESS_TOKEN.toString().equals(tokenType)) {
                 return AuthenticationTokenType.ACCESS_TOKEN;
             } 
-            throw new ValidationException(String.format("The authentication token type %s is not supported by the authorization server.", tokenType));
+            throw new ValidationException(String.format("The authentication token type %s is not supported by the authorization server", tokenType));
         }
     }
     
@@ -53,7 +53,7 @@ public class AuthenticationToken {
     }
     
     public static AuthenticationTokenBuilder generateTokenBuilder() {
-        return new AuthenticationTokenBuilder().token(UUIDGenerator.randomUUID().toString());
+        return new AuthenticationTokenBuilder().token(generateRandomToken());
     }
 
     public static AuthenticationTokenBuilder buildTokenBuilder(@Nonnull String token) {
@@ -61,18 +61,27 @@ public class AuthenticationToken {
     }
     
     public static AuthenticationToken updateTokenValue(AuthenticationToken currentAuthenticationToken) {
-        return new AuthenticationToken(UUIDGenerator.randomUUID().toString(), currentAuthenticationToken.getTokenType(),
+        return new AuthenticationToken(generateRandomToken(), currentAuthenticationToken.getTokenType(),
                 currentAuthenticationToken.getIssuedAt(), currentAuthenticationToken.getExpireAt(), currentAuthenticationToken.getUserId());
+    }
+    
+    /**
+     * TODO: In order to prevent brute-force attack, we should generate token value based on user_id 
+     * and assign that token to the user. 
+     * For now, users must provide both the user_id and token for the sake of login.
+     */
+    private static String generateRandomToken() {
+        return UUIDGenerator.randomUUID().toString();
     }
 
     public static class AuthenticationTokenBuilder {
 
-        private static final int DEFAULT_EXPIRATION_IN_HOURS = 24 * 60;
+        private static final int DEFAULT_EXPIRATION_IN_HOURS = 7 * 24;
 
         private String token;
         private AuthenticationTokenType tokenType;
         private DateTime issuedAt = TimeUtils.getDateTimeNowInUTC();
-        private DateTime expiredAt = issuedAt.plusMinutes(DEFAULT_EXPIRATION_IN_HOURS);
+        private DateTime expiredAt = issuedAt.plusHours(DEFAULT_EXPIRATION_IN_HOURS);
         private Long userId;
 
         public AuthenticationTokenBuilder() {}
