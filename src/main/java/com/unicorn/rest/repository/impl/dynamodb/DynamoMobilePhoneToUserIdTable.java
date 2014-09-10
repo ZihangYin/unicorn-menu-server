@@ -127,7 +127,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(getItemResult.getItem())) {
-            LOG.warn( String.format("The mobile phone %s in the getUserIdForMobilePhone request %s does not exist in the table.", mobilePhone, getItemRequest));
+            LOG.info("The mobile phone {} in the getUserIdForMobilePhone request does not exist in the table.", mobilePhone);
             throw new ItemNotFoundException();
         }
         return DynamoAttributeValueUtils.getRequiredLongValue(getItemResult.getItem(), USER_ID_KEY);
@@ -152,7 +152,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
         try {
             awsDynamoDBDAO.putItem(putItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.warn( String.format("The mobile phone %s in createMobilePhoneForUserId request %s already existed.", mobilePhone, putItemRequest), error);
+            LOG.info("The mobile phone {} in createMobilePhoneForUserId request already existed.", mobilePhone);
             throw new DuplicateKeyException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to createMobilePhoneForUserId %s to table %s.", putItemRequest, MOBILE_PHONE_TO_ID_TABLE_NAME), error);
@@ -178,7 +178,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
         try {
             awsDynamoDBDAO.deleteItem(deleteItemRequest);
         } catch (ResourceNotFoundException | ConditionalCheckFailedException error) {
-            LOG.warn( String.format("The user id %s in deleteMobilePhoneForUserId request %s does not match with one in table.", userId, deleteItemRequest), error);
+            LOG.info("The user id {} in deleteMobilePhoneForUserId request does not match with one in table.", userId);
             throw new ItemNotFoundException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to deleteMobilePhoneForUserId %s from table %s.", deleteItemRequest, MOBILE_PHONE_TO_ID_TABLE_NAME), error);
@@ -203,7 +203,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(queryResult.getItems())) {
-            LOG.warn( String.format("The user id %s in the queryMobilePhoneForUserId request %s does not exist in the table.", userId, queryResult));
+            LOG.info("The user id {} in the queryMobilePhoneForUserId request does not exist in the table.", userId);
             throw new ItemNotFoundException();
         }
         MobilePhone mobilePhone = buildMobilePhone(queryResult.getItems().get(0));
@@ -216,7 +216,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
                 return mobilePhone;
             }
         } catch (ItemNotFoundException error) {}
-        LOG.warn( String.format("Found stale mobile phone for user id %s", mobilePhone, userId));
+        LOG.warn("Found stale mobile phone {} for user id {}.", mobilePhone, userId);
         throw new StaleDataException();
     }
 

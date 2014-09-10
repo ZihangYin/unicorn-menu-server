@@ -123,8 +123,8 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(getItemResult.getItem())) {
-            LOG.warn( String.format("The token %s with token type %s in the getAuthenticationToken request %s does not exist in the table.", 
-                    token, tokenType, getItemRequest));
+            LOG.info("The token {} with token type {} in the getAuthenticationToken request does not exist in the table.", 
+                    token, tokenType.name());
             throw new ItemNotFoundException();
         }
         return getItemResult.getItem();
@@ -148,8 +148,8 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
         try {
             awsDynamoDBDAO.putItem(putItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.warn( String.format("The token %s in persistAuthenticationToken request %s already existed.", 
-                    authenticationToken.getToken(), putItemRequest), error);
+            LOG.info("The token {} with token type {} in persistAuthenticationToken request already existed.", 
+                    authenticationToken.getToken(), authenticationToken.getTokenType().name());
             throw new DuplicateKeyException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to persistAuthenticationToken %s to table %s.", putItemRequest, AUTHENTICATION_TOKEN_TABLE_NAME), error);
@@ -176,8 +176,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
         try {
             awsDynamoDBDAO.updateItem(updateItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.warn( String.format("The token %s with token type %s in revokeAuthenticationToken request %s does not exist in the table.", 
-                    token, tokenType.toString(), updateItemRequest), error);
+            LOG.info("The token {} with token type {} in revokeAuthenticationToken request does not exist in the table.", token, tokenType.name());
             throw new ItemNotFoundException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to revokeAuthenticationToken %s to table %s.", updateItemRequest, AUTHENTICATION_TOKEN_TABLE_NAME), error);
@@ -200,8 +199,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
         try {
             awsDynamoDBDAO.deleteItem(deleteItemRequest);
         } catch (ResourceNotFoundException error) {
-            LOG.warn( String.format("The token %s with token type %s in deleteAuthenticationToken request %s does not match with one in table.", 
-                    token, tokenType.toString(), deleteItemRequest), error);
+            LOG.info("The token {} with token type {} in deleteAuthenticationToken request does not match with one in table.", token, tokenType.name());
             throw new ItemNotFoundException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to deleteUserNameForUserId %s from table %s.", deleteItemRequest, AUTHENTICATION_TOKEN_TABLE_NAME), error);

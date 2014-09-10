@@ -189,7 +189,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(getItemResult.getItem())) {
-            LOG.warn( String.format("The user name %s in the getCurrentUserIdForUserName request %s does not exist in the table.", userName, getItemRequest));
+            LOG.info("The user name {} in the getCurrentUserIdForUserName request does not exist in the table.", userName);
             throw new ItemNotFoundException();
         }
         return DynamoAttributeValueUtils.getRequiredLongValue(getItemResult.getItem(), USER_ID_KEY);
@@ -214,13 +214,13 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(queryResult.getItems())) {
-            LOG.warn( String.format("The user name %s with active time %s in the getUserIdForUserNameAtTime request %s does not exist in the table.", 
-                    userName, activeTime, queryResult));
+            LOG.info("The user name {} with active time {} in the getUserIdForUserNameAtTime request does not exist in the table.", 
+                    userName, activeTime);
             throw new ItemNotFoundException();
         }
         if (activeTime > DynamoAttributeValueUtils.getRequiredLongValue(queryResult.getItems().get(0), DEACTIVATE_IN_EPOCH_KEY)) {
-            LOG.warn( String.format("The user name %s with active time %s in the getUserIdForUserNameAtTime request %s does not exist in the table.", 
-                    userName, activeTime, queryResult));
+            LOG.info("The user name {} with active time {} in the getUserIdForUserNameAtTime request does not exist in the table.", 
+                    userName, activeTime);
             throw new ItemNotFoundException();
         }
         return DynamoAttributeValueUtils.getRequiredLongValue(queryResult.getItems().get(0), USER_ID_KEY);
@@ -243,8 +243,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
         try {
             awsDynamoDBDAO.putItem(putItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.warn( String.format("The user name %s in createUserNameForUserId request %s already existed.", 
-                    userNameToUserIDItem.getUserName(), putItemRequest), error);
+            LOG.info("The user name {} in createUserNameForUserId request already existed.", userNameToUserIDItem.getUserName());
             throw new DuplicateKeyException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to createUserNameForUserId %s to table %s.", putItemRequest, USER_NAME_TO_ID_TABLE_NAME), error);
@@ -269,8 +268,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
         try {
             awsDynamoDBDAO.deleteItem(deleteItemRequest);
         } catch (ResourceNotFoundException | ConditionalCheckFailedException error) {
-            LOG.warn( String.format("The user id %s in deleteUserNameForUserId request %s does not match with one in table.", 
-                    userNameToUserIDItem.getUserId(), deleteItemRequest), error);
+            LOG.info("The user id {} in deleteUserNameForUserId request does not match with one in table.", userNameToUserIDItem.getUserId());
             throw new ItemNotFoundException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to deleteUserNameForUserId %s from table %s.", deleteItemRequest, USER_NAME_TO_ID_TABLE_NAME), error);
@@ -298,7 +296,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(queryResult.getItems())) {
-            LOG.warn( String.format("The user id %s in the queryUserForUserId request %s does not exist in the table.", userId, queryResult));
+            LOG.info("The user id {} in the queryUserForUserId request does not exist in the table.", userId);
             throw new ItemNotFoundException();
         }
 
@@ -314,7 +312,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
                 return userNameToUserIDItem;
             }
         } catch (ItemNotFoundException error) {}
-        LOG.warn( String.format("Found stale user name for user id %s", userName, userId));
+        LOG.warn("Found stale user name {} for user id {}.", userName, userId);
         throw new StaleDataException();
     }
     

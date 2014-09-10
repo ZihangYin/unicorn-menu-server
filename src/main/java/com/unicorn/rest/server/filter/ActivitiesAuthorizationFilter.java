@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.internal.util.Base64;
 
+import com.unicorn.rest.activities.exception.BadRequestException;
 import com.unicorn.rest.activities.exception.InternalServerErrorException;
 import com.unicorn.rest.activities.exception.MissingAuthorizationException;
 import com.unicorn.rest.activities.exception.UnrecognizedAuthorizationMethodException;
@@ -53,10 +54,10 @@ public class ActivitiesAuthorizationFilter implements ContainerRequestFilter {
             requestContext.setSecurityContext(new SubjectSecurityContext(subjectPrincipal));
             
         } catch (MissingAuthorizationException | UnrecognizedIdentityException | UnrecognizedAuthorizationMethodException error) {
-            LOG.info("Failed while attempting to fulfill authorization due to bad request.", error);
+            LOG.info(String.format("Failed while attempting to fulfill authorization due to %s: ", BadRequestException.BAD_REQUEST), error);
             throw error;
         } catch (RepositoryServerException error) {
-            LOG.error("Failed while attempting to fulfill authorization due to internal error.", error);
+            LOG.error(String.format("Failed while attempting to fulfill authorization due to %s: ", InternalServerErrorException.INTERNAL_FAILURE), error);
             throw new InternalServerErrorException(error);
         }
     }

@@ -95,7 +95,7 @@ public class DynamoUserProfileTable implements UserProfileTable {
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(getItemResult.getItem())) {
-            LOG.warn( String.format("The user id %s in the getUser request %s does not exist in the table.", userId, getItemRequest));
+            LOG.info("The user id {} in the getUser request does not exist in the table.", userId);
             throw new ItemNotFoundException();
         }
         return getItemResult.getItem();
@@ -117,7 +117,7 @@ public class DynamoUserProfileTable implements UserProfileTable {
         try {
             awsDynamoDBDAO.putItem(putItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.warn( String.format("The user id %s in createUserProfile request %s already existed.", userId, putItemRequest), error);
+            LOG.info("The user id {} in createUserProfile request already existed.", userId);
             throw new DuplicateKeyException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to createUserProfile %s to table %s.", putItemRequest, USER_PROFILE_TABLE_NAME), error);
@@ -138,7 +138,7 @@ public class DynamoUserProfileTable implements UserProfileTable {
         try {
             awsDynamoDBDAO.deleteItem(deleteItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.warn( String.format("The user id %s in deleteUser request %s does not match with one in table.", userId, deleteItemRequest), error);
+            LOG.info("The user id {} in deleteUser request does not match with one in table.", userId);
             throw new ItemNotFoundException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to deleteUserNameForUserId %s from table %s.", deleteItemRequest, USER_PROFILE_TABLE_NAME), error);

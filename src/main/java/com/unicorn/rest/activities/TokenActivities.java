@@ -77,13 +77,13 @@ public class TokenActivities {
                      * 
                      * TODO: monitor how often this happens
                      */
-                    LOG.warn( String.format("Failed to persist token %s due to duplicate token already exists", accessToken.getToken()));
+                    LOG.warn("Failed to persist token {} due to duplicate token already exists.", accessToken.getToken());
                     accessToken = AuthenticationToken.updateTokenValue(accessToken);
                     try {
                         tokenRepository.persistToken(accessToken);
 
                     } catch (DuplicateKeyException duplicateKeyAgain) {
-                        LOG.error(String.format("Failed to persist token %s for the second time due to duplicate token already exists", accessToken.getToken()));
+                        LOG.error("Failed to persist token {} for the second time due to duplicate token already exists.", accessToken.getToken());
                         throw new RepositoryServerException(duplicateKeyAgain);
                     }
                 }

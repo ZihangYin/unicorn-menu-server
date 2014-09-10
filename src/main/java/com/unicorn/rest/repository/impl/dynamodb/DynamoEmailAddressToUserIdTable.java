@@ -123,7 +123,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(getItemResult.getItem())) {
-            LOG.warn( String.format("The email address %s in the getUserIdForEmailAddress request %s does not exist in the table.", emailAddress, getItemRequest));
+            LOG.info("The email address {} in the getUserIdForEmailAddress request does not exist in the table.", emailAddress);
             throw new ItemNotFoundException();
         }
         return DynamoAttributeValueUtils.getRequiredLongValue(getItemResult.getItem(), USER_ID_KEY);
@@ -146,7 +146,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
         try {
             awsDynamoDBDAO.putItem(putItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.warn( String.format("The email address %s in createEmailAddressForUserId request %s already existed.", emailAddress, putItemRequest), error);
+            LOG.info("The email address {} in createEmailAddressForUserId request already existed.", emailAddress);
             throw new DuplicateKeyException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to createEmailAddressForUserId %s to table %s.", putItemRequest, EMAIL_ADDRESS_TO_ID_TABLE_NAME), error);
@@ -171,7 +171,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
         try {
             awsDynamoDBDAO.deleteItem(deleteItemRequest);
         } catch (ResourceNotFoundException | ConditionalCheckFailedException error) {
-            LOG.warn( String.format("The user id %s in deleteEmailAddressForUserId request %s does not match with one in table.", userId, deleteItemRequest), error);
+            LOG.info("The user id {} in deleteEmailAddressForUserId request does not match with one in table.", userId);
             throw new ItemNotFoundException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to deleteEmailAddressForUserId %s from table %s.", deleteItemRequest, EMAIL_ADDRESS_TO_ID_TABLE_NAME), error);
@@ -196,7 +196,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(queryResult.getItems())) {
-            LOG.warn( String.format("The user id %s in the queryEmailAddressForUser request %s does not exist in the table.", userId, queryResult));
+            LOG.info("The user id {} in the queryEmailAddressForUser request does not exist in the table.", userId);
             throw new ItemNotFoundException();
         }
         String emailAddress = DynamoAttributeValueUtils.getRequiredStringValue(queryResult.getItems().get(0), EMAIL_ADDRESS_KEY);
@@ -209,8 +209,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
                 return emailAddress;
             }
         } catch (ItemNotFoundException error) {}
-        LOG.warn( String.format("Found stale email address %s for user id %s", emailAddress, userId));
-        
+        LOG.warn("Found stale email address {} for user id {}.", emailAddress, userId);
         throw new StaleDataException();
     }
 

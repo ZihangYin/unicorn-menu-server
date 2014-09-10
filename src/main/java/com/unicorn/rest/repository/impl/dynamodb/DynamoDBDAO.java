@@ -91,7 +91,7 @@ public class DynamoDBDAO implements Closeable {
     }
 
     public GetItemResult getItem(GetItemRequest getItemRequest) throws AmazonServiceException, AmazonClientException {
-        LOG.debug( String.format("Attempting to get item %s from dynamodb.", getItemRequest));
+        LOG.debug("Attempting to get item {} from dynamodb.", getItemRequest);
         int numOfAttempts = 1;
         while (true) {
             try {
@@ -108,7 +108,7 @@ public class DynamoDBDAO implements Closeable {
     }
 
     public PutItemResult putItem(PutItemRequest putItemRequest) throws AmazonServiceException, AmazonClientException {
-        LOG.debug( String.format("Attempting to put item %s to dynamodb.", putItemRequest));
+        LOG.debug("Attempting to put item {} to dynamodb.", putItemRequest);
         int numOfAttempts = 1;
         while (true) {
             try {
@@ -127,7 +127,7 @@ public class DynamoDBDAO implements Closeable {
     }
 
     public UpdateItemResult updateItem(UpdateItemRequest updateItemRequest) throws AmazonServiceException, AmazonClientException {
-        LOG.debug( String.format("Attempting to update item %s to dynamodb.", updateItemRequest));
+        LOG.debug("Attempting to update item {} to dynamodb.", updateItemRequest);
         int numOfAttempts = 1;
         while (true) {
             try {
@@ -146,7 +146,7 @@ public class DynamoDBDAO implements Closeable {
     }
 
     public DeleteItemResult deleteItem(DeleteItemRequest deleteItemRequest) throws AmazonServiceException, AmazonClientException {
-        LOG.debug( String.format("Attempting to delete item %s from dynamodb", deleteItemRequest));
+        LOG.debug("Attempting to delete item {} from dynamodb.", deleteItemRequest);
         int numOfAttempts = 1;
         while (true) {
             try {
@@ -165,7 +165,7 @@ public class DynamoDBDAO implements Closeable {
     }
 
     public QueryResult queryOnce(QueryRequest queryRequest) throws AmazonServiceException, AmazonClientException {
-        LOG.debug( String.format("Attempting to query from dynamodb with query request %s", queryRequest));
+        LOG.debug("Attempting to query from dynamodb with query request {}.", queryRequest);
         int numOfAttempts = 1;
         while (true) {
             try {
@@ -183,7 +183,7 @@ public class DynamoDBDAO implements Closeable {
 
     public CreateTableResult createTable(CreateTableRequest createTableRequest) 
             throws ResourceInUseException, AmazonServiceException, AmazonClientException {
-        LOG.debug( String.format("Attempting to create table in dynamodb with create request %s", createTableRequest));
+        LOG.debug("Attempting to create table in dynamodb with create request {}", createTableRequest);
         int numOfAttempts = 1;
         while (true) {
             try {
@@ -206,7 +206,7 @@ public class DynamoDBDAO implements Closeable {
 
     public DeleteTableResult deleteTable(DeleteTableRequest deleteTableRequest)
             throws ResourceNotFoundException, AmazonServiceException, AmazonClientException {
-        LOG.debug( String.format("Attempting to delete table in dynamodb with delete request %s", deleteTableRequest));
+        LOG.debug( "Attempting to delete table in dynamodb with delete request {}", deleteTableRequest);
         int numOfAttempts = 1;
         while (true) {
             try {
@@ -248,7 +248,7 @@ public class DynamoDBDAO implements Closeable {
     }
 
     public void waitForTableToBecomeAvailable(String tableName, int waitingMinutes) {
-        LOG.debug(String.format("Attempting to wait for table %s to become available", tableName));
+        LOG.debug("Attempting to wait for table {} to become available.", tableName);
 
         long startTime = System.currentTimeMillis();
         long endTime = startTime + (waitingMinutes * 60 * 1000);
@@ -271,7 +271,7 @@ public class DynamoDBDAO implements Closeable {
     }
 
     public void waitForTableToBeDeleted(String tableName, int waitingMinutes) {
-        LOG.debug(String.format("Attempting to wait for table %s to be deleted", tableName));
+        LOG.debug("Attempting to wait for table {} to be deleted.", tableName);
 
         long startTime = System.currentTimeMillis();
         long endTime = startTime + (waitingMinutes * 60 * 1000);

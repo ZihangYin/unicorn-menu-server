@@ -89,14 +89,14 @@ public class UserRepositoryImpl implements UserRepository {
              * 
              * TODO: monitor how often this happens
              */
-            LOG.warn( String.format("Failed to create user for user %s with user_id %s due to duplicate user_id already exists", userName, userId));
+            LOG.warn("Failed to create user for user {} with user_id {} due to duplicate user_id already exists.", userName, userId);
             userId = SimpleFlakeKeyGenerator.generateKey();
             try {
                 userProfileTable.createUser(userId, userDisplayName, hasedPassword, salt);
             
             } catch(DuplicateKeyException duplicateKeyAgain) {
-                LOG.error( String.format("Failed to create user for user %s with user_id %s for the second time  due to duplicate user_id already exists", 
-                        userName, userId));
+                LOG.error("Failed to create user for user {} with user_id {} for the second time due to duplicate user_id already exists.", 
+                        userName, userId);
                 throw new RepositoryServerException(duplicateKeyAgain);
             }
         }
