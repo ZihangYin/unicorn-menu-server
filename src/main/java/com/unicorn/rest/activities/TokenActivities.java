@@ -37,7 +37,7 @@ import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.AuthenticationToken;
 import com.unicorn.rest.repository.model.UserAuthorizationInfo;
 import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationTokenType;
-import com.unicorn.rest.utils.PasswordAuthenticationHelper;
+import com.unicorn.rest.utils.AuthenticationSecretUtils;
 
 @Path("/v1/tokens")
 public class TokenActivities {
@@ -145,7 +145,7 @@ public class TokenActivities {
             Long userId = userRepository.getUserIdFromLoginName(loginName);
             UserAuthorizationInfo userAuthorizationInfo = userRepository.getUserAuthorizationInfo(userId);
 
-            if (PasswordAuthenticationHelper.authenticatePassword(password, userAuthorizationInfo.getPassword(), userAuthorizationInfo.getSalt())) {
+            if (AuthenticationSecretUtils.authenticateSecret(password, userAuthorizationInfo.getPassword(), userAuthorizationInfo.getSalt())) {
                 return AuthenticationToken.generateTokenBuilder().tokenType(AuthenticationTokenType.ACCESS_TOKEN).userId(userId).build();
             }
 

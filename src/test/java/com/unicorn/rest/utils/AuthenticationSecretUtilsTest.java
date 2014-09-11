@@ -18,28 +18,28 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
 import com.unicorn.rest.repository.exception.ValidationException;
-import com.unicorn.rest.utils.PasswordAuthenticationHelper;
+import com.unicorn.rest.utils.AuthenticationSecretUtils;
 
-public class UserPassAuthenticationHelperTest {
+public class AuthenticationSecretUtilsTest {
     
     @Test
     public void validateStrongPassword() throws ValidationException {
-        assertFalse(PasswordAuthenticationHelper.validateStrongPassword(new String()));
-        assertFalse(PasswordAuthenticationHelper.validateStrongPassword(StringUtils.EMPTY));
-        assertFalse(PasswordAuthenticationHelper.validateStrongPassword(StringUtils.SPACE));
-        assertFalse(PasswordAuthenticationHelper.validateStrongPassword("1a2b"));
-        assertFalse(PasswordAuthenticationHelper.validateStrongPassword("1a2b3"));
-        assertFalse(PasswordAuthenticationHelper.validateStrongPassword("password"));
-        assertFalse(PasswordAuthenticationHelper.validateStrongPassword("12345678"));
-        assertFalse(PasswordAuthenticationHelper.validateStrongPassword("abcdefgh12345678"));
+        assertFalse(AuthenticationSecretUtils.validateStrongSecret(new String()));
+        assertFalse(AuthenticationSecretUtils.validateStrongSecret(StringUtils.EMPTY));
+        assertFalse(AuthenticationSecretUtils.validateStrongSecret(StringUtils.SPACE));
+        assertFalse(AuthenticationSecretUtils.validateStrongSecret("1a2b"));
+        assertFalse(AuthenticationSecretUtils.validateStrongSecret("1a2b3"));
+        assertFalse(AuthenticationSecretUtils.validateStrongSecret("password"));
+        assertFalse(AuthenticationSecretUtils.validateStrongSecret("12345678"));
+        assertFalse(AuthenticationSecretUtils.validateStrongSecret("abcdefgh12345678"));
         
-        assertTrue(PasswordAuthenticationHelper.validateStrongPassword("1a2b3c"));
+        assertTrue(AuthenticationSecretUtils.validateStrongSecret("1a2b3c"));
     }
     
     @Test
     public void generateRandomSaltHappyCase() throws UnsupportedEncodingException {
-        ByteBuffer saltOne = PasswordAuthenticationHelper.generateRandomSalt();
-        ByteBuffer saltTwo = PasswordAuthenticationHelper.generateRandomSalt();
+        ByteBuffer saltOne = AuthenticationSecretUtils.generateRandomSalt();
+        ByteBuffer saltTwo = AuthenticationSecretUtils.generateRandomSalt();
         
         assertNotNull(saltOne);
         assertNotNull(saltTwo);
@@ -54,22 +54,22 @@ public class UserPassAuthenticationHelperTest {
     @Test
     public void generateHashedPassWithSaltHappyCase() throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
         String passwordOne = "1a2b3c";  
-        ByteBuffer saltOne = PasswordAuthenticationHelper.generateRandomSalt();
+        ByteBuffer saltOne = AuthenticationSecretUtils.generateRandomSalt();
         
-        ByteBuffer hashedPasswordOne = PasswordAuthenticationHelper.generateHashedPassWithSalt(passwordOne, saltOne);
-        ByteBuffer hashedPasswordDup = PasswordAuthenticationHelper.generateHashedPassWithSalt(passwordOne, saltOne);
+        ByteBuffer hashedPasswordOne = AuthenticationSecretUtils.generateHashedSecretWithSalt(passwordOne, saltOne);
+        ByteBuffer hashedPasswordDup = AuthenticationSecretUtils.generateHashedSecretWithSalt(passwordOne, saltOne);
         
         assertNotNull(hashedPasswordOne);
         assertThat(hashedPasswordOne, equalTo(hashedPasswordDup));
         
         String anotherPassword = "3c2b1a"; 
-        ByteBuffer hashedPasswordTwo = PasswordAuthenticationHelper.generateHashedPassWithSalt(anotherPassword, saltOne);
+        ByteBuffer hashedPasswordTwo = AuthenticationSecretUtils.generateHashedSecretWithSalt(anotherPassword, saltOne);
         
         assertNotNull(hashedPasswordTwo);
         assertThat(hashedPasswordOne, not(equalTo(hashedPasswordTwo)));
         
-        ByteBuffer anotherSalt = PasswordAuthenticationHelper.generateRandomSalt();
-        ByteBuffer hashedPasswordThree = PasswordAuthenticationHelper.generateHashedPassWithSalt(anotherPassword, anotherSalt);
+        ByteBuffer anotherSalt = AuthenticationSecretUtils.generateRandomSalt();
+        ByteBuffer hashedPasswordThree = AuthenticationSecretUtils.generateHashedSecretWithSalt(anotherPassword, anotherSalt);
         
         assertNotNull(hashedPasswordThree);
         assertThat(hashedPasswordOne, not(equalTo(hashedPasswordThree)));
@@ -78,9 +78,9 @@ public class UserPassAuthenticationHelperTest {
     
     @Test
     public void generateHashedPassWithSaltWithNullPassword() throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        ByteBuffer saltOne = PasswordAuthenticationHelper.generateRandomSalt();
+        ByteBuffer saltOne = AuthenticationSecretUtils.generateRandomSalt();
         try{
-            PasswordAuthenticationHelper.generateHashedPassWithSalt(null, saltOne);
+            AuthenticationSecretUtils.generateHashedSecretWithSalt(null, saltOne);
         } catch(ValidationException error) {
             return;
         }
@@ -90,16 +90,16 @@ public class UserPassAuthenticationHelperTest {
     @Test
     public void authenticatePasswordHappyCase() throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
         String passwordOne = "1a2b3c";  
-        ByteBuffer saltOne = PasswordAuthenticationHelper.generateRandomSalt();
+        ByteBuffer saltOne = AuthenticationSecretUtils.generateRandomSalt();
         
-        ByteBuffer hashedPasswordOne = PasswordAuthenticationHelper.generateHashedPassWithSalt(passwordOne, saltOne);
-        assertTrue(PasswordAuthenticationHelper.authenticatePassword(passwordOne, hashedPasswordOne, saltOne));
+        ByteBuffer hashedPasswordOne = AuthenticationSecretUtils.generateHashedSecretWithSalt(passwordOne, saltOne);
+        assertTrue(AuthenticationSecretUtils.authenticateSecret(passwordOne, hashedPasswordOne, saltOne));
         
         String passwordTwo = "3c2b1a";
-        assertFalse(PasswordAuthenticationHelper.authenticatePassword(passwordTwo, hashedPasswordOne, saltOne));
+        assertFalse(AuthenticationSecretUtils.authenticateSecret(passwordTwo, hashedPasswordOne, saltOne));
         
-        ByteBuffer saltTwo = PasswordAuthenticationHelper.generateRandomSalt();
-        assertFalse(PasswordAuthenticationHelper.authenticatePassword(passwordOne, hashedPasswordOne, saltTwo));
+        ByteBuffer saltTwo = AuthenticationSecretUtils.generateRandomSalt();
+        assertFalse(AuthenticationSecretUtils.authenticateSecret(passwordOne, hashedPasswordOne, saltTwo));
         
     }
 }

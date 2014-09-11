@@ -35,6 +35,7 @@ import com.unicorn.rest.server.injector.TestRepositoryBinder;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
 public class UserActivitiesTest extends GrizzlyServerTestBase {
+    
     private static WebTarget webTarget;
     private static TestRepositoryBinder repositoryBinder;
 

@@ -18,23 +18,33 @@ import com.unicorn.rest.commons.ServiceConstants;
 import com.unicorn.rest.repository.exception.ValidationException;
 
 
-public class PasswordAuthenticationHelper {
+public class AuthenticationSecretUtils {
 
     public static final String MESSAGE_DIGEST_ALGORITHM = "SHA-256";
     public static final int HASHING_ITERATIONS = 100;
 
     /**
-     * The regular expression pattern requires the password to have 6 to 15 characters with at least one numeric digit, and at least one letter
+     * The regular expression pattern requires the secret to have 6 to 15 characters with at least one numeric digit, and at least one letter
      */
-    private static Pattern passwordPattern = Pattern.compile("((?=.*\\d)(?=.*[a-zA-Z]).{6,15})");
+    private static Pattern defaultSecretPattern = Pattern.compile("((?=.*\\d)(?=.*[a-zA-Z]).{6,15})");
     
     /**
-     * This method is used to validate if the password is valid and strong enough
-     * @param password @Nullable
+     * This method is used to validate if the secret is valid and strong enough
+     * @param secret @Nonnull
      * @return
      */
-    public static boolean validateStrongPassword(@Nonnull String password) {
-        Matcher match = passwordPattern.matcher(password);
+    public static boolean validateStrongSecret(@Nonnull String secret) {
+        return validateStrongSecret(secret, defaultSecretPattern);
+    }
+    
+    /**
+     * This method is used to validate if the secret is valid and strong enough
+     * @param secret @Nonnull
+     * @param secretPattern @Nonnull
+     * @return
+     */
+    public static boolean validateStrongSecret(@Nonnull String secret, @Nonnull Pattern secretPattern) {
+        Matcher match = secretPattern.matcher(secret);
         if(match.matches()){
             return true;
         }
@@ -42,9 +52,9 @@ public class PasswordAuthenticationHelper {
     }
     
     /**
-     * This method is used to verify if the password persisted in database matches one provided by user
-     * @param userPassword @Nonnull
-     * @param persistedPassword @Nonnull
+     * This method is used to verify if the secret persisted in database matches one provided by user
+     * @param userSecret @Nonnull
+     * @param persistedSecret @Nonnull
      * @param persistedSalt @Nonnull
      * @return
      * @throws ValidationException 
@@ -52,9 +62,9 @@ public class PasswordAuthenticationHelper {
      * @throws NoSuchAlgorithmException
 
      */
-    public static boolean authenticatePassword(@Nonnull String userPassword, @Nonnull ByteBuffer persistedPassword, @Nonnull ByteBuffer persistedSalt) 
+    public static boolean authenticateSecret(@Nonnull String userSecret, @Nonnull ByteBuffer persistedSecret, @Nonnull ByteBuffer persistedSalt) 
             throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
-        return Arrays.equals(persistedPassword.array(), generateHashedPass(userPassword, persistedSalt));
+        return Arrays.equals(persistedSecret.array(), generateHashedSecret(userSecret, persistedSalt));
     }
 
     /**
@@ -73,39 +83,39 @@ public class PasswordAuthenticationHelper {
     }
     
     /**
-     * This method is used to generate a new hashed password for plain-text password and salt provided by requester 
+     * This method is used to generate a new hashed secret for plain-text secret and salt provided by requester 
      * 
-     * @param userPassword @Nullable
+     * @param userSecret @Nullable
      * @param salt @Nonnull
      * @return @Nonnull
      * @throws ValidationException
      * @throws UnsupportedEncodingException
      * @throws NoSuchAlgorithmException
      */
-    public static @Nonnull ByteBuffer generateHashedPassWithSalt(@Nullable String userPassword, @Nonnull ByteBuffer salt) 
+    public static @Nonnull ByteBuffer generateHashedSecretWithSalt(@Nullable String userSecret, @Nonnull ByteBuffer salt) 
             throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
-        if (StringUtils.isBlank(userPassword)) {
-            throw new ValidationException("Expecting non-null request paramter for generateHashedPassWithSalt, but received: userPassword=null");
+        if (StringUtils.isBlank(userSecret)) {
+            throw new ValidationException("Expecting non-null request paramter for generateHashedSecretWithSalt, but received: userSecret=null");
         }
-        return convertByteArrayToByteBuffer(generateHashedPass(userPassword, salt));
+        return convertByteArrayToByteBuffer(generateHashedSecret(userSecret, salt));
     }
 
-    private static @Nonnull byte[] generateHashedPass(@Nonnull String userPassword, @Nonnull ByteBuffer salt) 
+    private static @Nonnull byte[] generateHashedSecret(@Nonnull String userSecret, @Nonnull ByteBuffer salt) 
             throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        return hashingPassword(HASHING_ITERATIONS, userPassword, salt.array());
+        return hashingSecret(HASHING_ITERATIONS, userSecret, salt.array());
     }
 
-    private static @Nonnull byte[] hashingPassword(@Nonnull int numOfIterations, @Nonnull String password, @Nonnull byte[] salt) 
+    private static @Nonnull byte[] hashingSecret(@Nonnull int numOfIterations, @Nonnull String secret, @Nonnull byte[] salt) 
             throws UnsupportedEncodingException, NoSuchAlgorithmException {
         // TODO: Monitoring time elapse for hashing process
         MessageDigest msgDigest = MessageDigest.getInstance(MESSAGE_DIGEST_ALGORITHM);
         msgDigest.update(salt);
-        byte[] hashedPass = msgDigest.digest(password.getBytes(ServiceConstants.UTF_8_CHARSET));
+        byte[] hashedSecret = msgDigest.digest(secret.getBytes(ServiceConstants.UTF_8_CHARSET));
         for (int i = 0; i < numOfIterations; i++) {
             msgDigest.reset();
-            hashedPass = msgDigest.digest(hashedPass);
+            hashedSecret = msgDigest.digest(hashedSecret);
         }
-        return hashedPass;
+        return hashedSecret;
     }
 
     private static @Nonnull ByteBuffer convertByteArrayToByteBuffer(@Nonnull byte[] bytes) {

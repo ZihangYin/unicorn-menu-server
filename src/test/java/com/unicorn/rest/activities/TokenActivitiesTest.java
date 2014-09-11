@@ -39,7 +39,7 @@ import com.unicorn.rest.repository.model.UserAuthorizationInfo;
 import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationTokenType;
 import com.unicorn.rest.server.GrizzlyServerTestBase;
 import com.unicorn.rest.server.injector.TestRepositoryBinder;
-import com.unicorn.rest.utils.PasswordAuthenticationHelper;
+import com.unicorn.rest.utils.AuthenticationSecretUtils;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
 public class TokenActivitiesTest extends GrizzlyServerTestBase {
@@ -65,8 +65,8 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
     private UserAuthorizationInfo createUserAuthorizationInfo(Long userId, String password) 
             throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
-        ByteBuffer salt = PasswordAuthenticationHelper.generateRandomSalt();
-        ByteBuffer hashedPassword = PasswordAuthenticationHelper.generateHashedPassWithSalt(password, salt);
+        ByteBuffer salt = AuthenticationSecretUtils.generateRandomSalt();
+        ByteBuffer hashedPassword = AuthenticationSecretUtils.generateHashedSecretWithSalt(password, salt);
         return UserAuthorizationInfo.buildUserAuthorizationInfo()
                 .userId(userId).password(hashedPassword).salt(salt).build();
     }

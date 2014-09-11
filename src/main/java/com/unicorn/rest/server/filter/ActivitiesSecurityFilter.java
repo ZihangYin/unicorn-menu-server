@@ -9,18 +9,16 @@ import javax.inject.Inject;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.HttpHeaders;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.glassfish.jersey.internal.util.Base64;
 
 import com.unicorn.rest.activities.exception.BadRequestException;
 import com.unicorn.rest.activities.exception.InternalServerErrorException;
 import com.unicorn.rest.activities.exception.MissingAuthorizationException;
-import com.unicorn.rest.activities.exception.UnrecognizedAuthorizationMethodException;
+import com.unicorn.rest.activities.exception.UnrecognizedAuthorizationSchemeException;
 import com.unicorn.rest.activities.exception.UnrecognizedIdentityException;
 import com.unicorn.rest.repository.AuthenticationTokenRepository;
 import com.unicorn.rest.repository.exception.ItemNotFoundException;
@@ -33,12 +31,9 @@ import com.unicorn.rest.server.filter.model.SubjectPrincipal;
 import com.unicorn.rest.server.filter.model.SubjectSecurityContext;
 import com.unicorn.rest.server.filter.model.UserSubjectPrincipal;
 
-//@Provider
-@PreMatching
 @Priority(Priorities.AUTHENTICATION)
-public class ActivitiesAuthorizationFilter implements ContainerRequestFilter {
-    private static final Logger LOG = LogManager.getLogger(ActivitiesAuthorizationFilter.class);
-    private static final String AUTHORIZATION_CODE_SEPARATOR = ":";
+public class ActivitiesSecurityFilter implements ContainerRequestFilter {
+    private static final Logger LOG = LogManager.getLogger(ActivitiesSecurityFilter.class);
     
     @Inject
     private AuthenticationTokenRepository tokenRepository;
@@ -48,12 +43,11 @@ public class ActivitiesAuthorizationFilter implements ContainerRequestFilter {
             throws IOException {
         try {
             String authorizationHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
-            String[] authentication = parseAuthenticationHeader(authorizationHeader);
-        
-            SubjectPrincipal subjectPrincipal = authenticate(authentication, tokenRepository);
+            String authenticationCode = parseAuthenticationHeader(authorizationHeader);
+            SubjectPrincipal subjectPrincipal = authenticate(authenticationCode, tokenRepository);
             requestContext.setSecurityContext(new SubjectSecurityContext(subjectPrincipal));
             
-        } catch (MissingAuthorizationException | UnrecognizedIdentityException | UnrecognizedAuthorizationMethodException error) {
+        } catch (MissingAuthorizationException | UnrecognizedIdentityException | UnrecognizedAuthorizationSchemeException error) {
             LOG.info(String.format("Failed while attempting to fulfill authorization due to %s: ", BadRequestException.BAD_REQUEST), error);
             throw error;
         } catch (RepositoryServerException error) {
@@ -62,31 +56,26 @@ public class ActivitiesAuthorizationFilter implements ContainerRequestFilter {
         }
     }
 
-    private String[] parseAuthenticationHeader(@Nullable String authorizationHeader) 
-            throws MissingAuthorizationException, UnrecognizedAuthorizationMethodException {
+    private String parseAuthenticationHeader(@Nullable String authorizationHeader) 
+            throws MissingAuthorizationException, UnrecognizedAuthorizationSchemeException {
         if (StringUtils.isBlank(authorizationHeader)) {
             throw new MissingAuthorizationException();
         }
-
+        
         if (!authorizationHeader.startsWith(AuthenticationScheme.BEARER_AUTHENTICATION.toString())) {
-            throw new UnrecognizedAuthorizationMethodException();
+            throw new UnrecognizedAuthorizationSchemeException();
         }
-        String authorizationCode = authorizationHeader.replaceFirst(AuthenticationScheme.BEARER_AUTHENTICATION.toString(), "");
-        //Decode the Base64 into byte[]
-        String[] authentication = Base64.decodeAsString(authorizationCode).split(AUTHORIZATION_CODE_SEPARATOR);
-        if (authentication.length != 2 || StringUtils.isBlank(authentication[0]) || StringUtils.isBlank(authentication[1])) {
+        String authenticationCode = authorizationHeader.replaceFirst(AuthenticationScheme.BEARER_AUTHENTICATION.toString(), "");
+        if (StringUtils.isBlank(authenticationCode)) {
             throw new MissingAuthorizationException();
         } 
-        return authentication;
+        return authenticationCode;
     }
 
-    private SubjectPrincipal authenticate(@Nonnull String[] authentication, @Nonnull AuthenticationTokenRepository authenticationTokenRepository) 
+    private SubjectPrincipal authenticate(@Nonnull String authenticationCode, @Nonnull AuthenticationTokenRepository authenticationTokenRepository) 
             throws MissingAuthorizationException, UnrecognizedIdentityException, RepositoryServerException {
         try {
-            AuthenticationToken authenticationToken = authenticationTokenRepository.findToken(AuthenticationTokenType.ACCESS_TOKEN, authentication[1]);
-            if (!authentication[0].equals(authenticationToken.getUserId())) {
-                throw new UnrecognizedIdentityException();
-            }
+            AuthenticationToken authenticationToken = authenticationTokenRepository.findToken(AuthenticationTokenType.ACCESS_TOKEN, authenticationCode);
             return new UserSubjectPrincipal(authenticationToken.getUserId(), AuthenticationScheme.BEARER_AUTHENTICATION);
 
         } catch (ValidationException error) {

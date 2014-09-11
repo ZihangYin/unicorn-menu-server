@@ -24,7 +24,7 @@ import com.unicorn.rest.repository.exception.DuplicateKeyException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.UserDisplayName;
 import com.unicorn.rest.repository.model.UserName;
-import com.unicorn.rest.utils.PasswordAuthenticationHelper;
+import com.unicorn.rest.utils.AuthenticationSecretUtils;
 
 @Path("/v1/users")
 public class UserActivities {
@@ -52,7 +52,7 @@ public class UserActivities {
             UserName userName = new UserName(RequestValidator.validateRequiredParameter(UserRequest.USER_NAME, userRequest.getUserName()));
             UserDisplayName userDisplayName = new UserDisplayName(RequestValidator.validateRequiredParameter(UserRequest.USER_DISPLAY_NAME, userRequest.getUserDisplayName()));
             String password = RequestValidator.validateRequiredParameter(UserRequest.PASSWORD, userRequest.getPassword());
-            if (!PasswordAuthenticationHelper.validateStrongPassword(password)) {
+            if (!AuthenticationSecretUtils.validateStrongSecret(password)) {
                 throw new WeakPasswordException();
             }
             try{    

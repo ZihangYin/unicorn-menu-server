@@ -24,7 +24,7 @@ import com.unicorn.rest.repository.table.EmailAddressToUserIdTable;
 import com.unicorn.rest.repository.table.MobilePhoneToUserIdTable;
 import com.unicorn.rest.repository.table.UserNameToUserIdTable;
 import com.unicorn.rest.repository.table.UserProfileTable;
-import com.unicorn.rest.utils.PasswordAuthenticationHelper;
+import com.unicorn.rest.utils.AuthenticationSecretUtils;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
 public class UserRepositoryImpl implements UserRepository {
@@ -77,8 +77,8 @@ public class UserRepositoryImpl implements UserRepository {
             String password) throws ValidationException, DuplicateKeyException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
         
         Long userId = SimpleFlakeKeyGenerator.generateKey();
-        ByteBuffer salt = PasswordAuthenticationHelper.generateRandomSalt();
-        ByteBuffer hasedPassword = PasswordAuthenticationHelper.generateHashedPassWithSalt(password, salt);
+        ByteBuffer salt = AuthenticationSecretUtils.generateRandomSalt();
+        ByteBuffer hasedPassword = AuthenticationSecretUtils.generateHashedSecretWithSalt(password, salt);
         
         try {
             userProfileTable.createUser(userId, userDisplayName, hasedPassword, salt);

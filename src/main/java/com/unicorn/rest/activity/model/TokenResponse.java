@@ -45,4 +45,5 @@ public class TokenResponse {
         return "TokenResponse [tokenType=" + tokenType + ", accessToken="
                 + accessToken + ", expireAt=" + expireAt + "]";
     }
+
 }

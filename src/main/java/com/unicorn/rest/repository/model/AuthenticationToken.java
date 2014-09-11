@@ -66,11 +66,11 @@ public class AuthenticationToken {
     }
     
     /**
-     * TODO: In order to prevent brute-force attack, we should generate token value based on user_id 
-     * and assign that token to the user. 
-     * For now, users must provide both the user_id and token for the sake of login.
+     * TODO: In order to prevent brute-force attack and better security, we should generate token value based on user_id 
+     * or any salt generated on the server side and assign that token to the user. 
+     * Still, we need to guarantee that the token value is globally unique.
      */
-    private static String generateRandomToken() {
+    private static String generateRandomToken() {        
         return UUIDGenerator.randomUUID().toString();
     }
 

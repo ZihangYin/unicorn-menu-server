@@ -19,7 +19,7 @@ import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.impl.dynamodb.DynamoUserProfileTable;
 import com.unicorn.rest.repository.model.UserAuthorizationInfo;
 import com.unicorn.rest.repository.model.UserDisplayName;
-import com.unicorn.rest.utils.PasswordAuthenticationHelper;
+import com.unicorn.rest.utils.AuthenticationSecretUtils;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
 public class DynamoUserProfileTableIntegrationTest {
@@ -38,8 +38,8 @@ public class DynamoUserProfileTableIntegrationTest {
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
         Long userId = SimpleFlakeKeyGenerator.generateKey();
         UserDisplayName userDisplayName = new UserDisplayName("userDisplayName");
-        ByteBuffer salt = PasswordAuthenticationHelper.generateRandomSalt();
-        ByteBuffer password = PasswordAuthenticationHelper.generateHashedPassWithSalt("1a2b3c", salt);
+        ByteBuffer salt = AuthenticationSecretUtils.generateRandomSalt();
+        ByteBuffer password = AuthenticationSecretUtils.generateHashedSecretWithSalt("1a2b3c", salt);
 
         try {
             userProfileTable.createUser(userId, userDisplayName, password, salt);
@@ -72,10 +72,10 @@ public class DynamoUserProfileTableIntegrationTest {
         Long userId = SimpleFlakeKeyGenerator.generateKey();
         UserDisplayName userDisplayName1 = new UserDisplayName("userDisplayNameOne");
         UserDisplayName userDisplayName2 = new UserDisplayName("userDisplayNameTwo");
-        ByteBuffer salt1 = PasswordAuthenticationHelper.generateRandomSalt();
-        ByteBuffer salt2 = PasswordAuthenticationHelper.generateRandomSalt();
-        ByteBuffer password1 = PasswordAuthenticationHelper.generateHashedPassWithSalt("1a2b3c", salt1);
-        ByteBuffer password2 = PasswordAuthenticationHelper.generateHashedPassWithSalt("3c2b1a", salt2);
+        ByteBuffer salt1 = AuthenticationSecretUtils.generateRandomSalt();
+        ByteBuffer salt2 = AuthenticationSecretUtils.generateRandomSalt();
+        ByteBuffer password1 = AuthenticationSecretUtils.generateHashedSecretWithSalt("1a2b3c", salt1);
+        ByteBuffer password2 = AuthenticationSecretUtils.generateHashedSecretWithSalt("3c2b1a", salt2);
         try {
             userProfileTable.createUser(userId, userDisplayName1, password1, salt1);
             try {
