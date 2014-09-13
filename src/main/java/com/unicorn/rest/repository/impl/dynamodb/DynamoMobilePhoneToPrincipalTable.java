@@ -42,20 +42,19 @@ import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.StaleDataException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.MobilePhone;
-import com.unicorn.rest.repository.table.MobilePhoneToUserIdTable;
+import com.unicorn.rest.repository.table.MobilePhoneToPrincipalTable;
 import com.unicorn.rest.utils.TimeUtils;
 
 @Service
-public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable {
-    private static final Logger LOG = LogManager.getLogger(DynamoMobilePhoneToUserIdTable.class);
+public class DynamoMobilePhoneToPrincipalTable implements MobilePhoneToPrincipalTable {
+    private static final Logger LOG = LogManager.getLogger(DynamoMobilePhoneToPrincipalTable.class);
 
-    private static final String MOBILE_PHONE_TO_ID_TABLE_NAME = "MOBILE_PHONE_TO_ID_TABLE";
     private static final String PHONE_NUMBER_KEY = "PHONE_NUMBER"; //HashKey
     private static final String COUNTRY_CODE_KEY = "COUNTRY_CODE"; //RangeKey
-    private static final String USER_ID_KEY = "USER_ID";
+    private static final String PRINCIPAL_KEY = "PRINCIPAL";
     private static final String ACTIVATE_IN_EPOCH_KEY = "ACTIVATE_IN_EPOCH"; 
 
-    private static final String USER_ID_ACTIVATE_IN_EPOCH_GSI_KEY = "USER_ID-ACTIVATE_IN_EPOCH-GSI";
+    private static final String PRINCIPAL_ACTIVATE_IN_EPOCH_GSI_KEY = "PRINCIPAL-ACTIVATE_IN_EPOCH-GSI";
     private static final String COUNTRY_CODE_PHONE_NUMBER_GSI_KEY = "COUNTRY_CODE-PHONE_NUMBER-GSI";
 
     private final DynamoDBDAO awsDynamoDBDAO = DynamoDBDAO.get();
@@ -67,79 +66,79 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
     }
 
     @Override
-    public void createMobilePhoneForUserId(@Nullable MobilePhone mobilePhone, @Nullable Long userId) 
+    public void createMobilePhoneForPrincipal(@Nullable MobilePhone mobilePhone, @Nullable Long principal) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
-        if (mobilePhone== null || userId == null) {
+        if (mobilePhone== null || principal == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for createMobilePhoneForUserId, but received: mobilePhone=%s, userId=%s", mobilePhone, userId));
+                    String.format("Expecting non-null request paramter for createMobilePhoneForPrincipal, but received: mobilePhone=%s, principal=%s", mobilePhone, principal));
         }
-        createMobilePhoneForUserId(mobilePhone, userId, TimeUtils.getEpochTimeNowInUTC());
+        createMobilePhoneForPrincipal(mobilePhone, principal, TimeUtils.getEpochTimeNowInUTC());
     } 
 
     @Override
-    public void updateMobilePhoneForUserId(@Nullable MobilePhone curPhone, @Nullable MobilePhone newPhone, @Nullable Long userId) 
+    public void updateMobilePhoneForPrincipal(@Nullable MobilePhone curPhone, @Nullable MobilePhone newPhone, @Nullable Long principal) 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException {
-        if (curPhone == null || newPhone == null || userId == null) {
+        if (curPhone == null || newPhone == null || principal == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for updateMobilePhoneForUserId, but received: curPhone=%s, newPhone=%s, userId=%s", 
-                            curPhone, newPhone, userId));
+                    String.format("Expecting non-null request paramter for updateMobilePhoneForPrincipal, but received: curPhone=%s, newPhone=%s, principal=%s", 
+                            curPhone, newPhone, principal));
         }
         
-        if (!curPhone.equals(getMobilePhone(userId, false))) {
+        if (!curPhone.equals(getMobilePhone(principal, false))) {
             throw new ItemNotFoundException();
         }
         Long now = TimeUtils.getEpochTimeNowInUTC();
-        createMobilePhoneForUserId(newPhone, userId, now);
-        deleteMobilePhoneForUserId(curPhone, userId);
+        createMobilePhoneForPrincipal(newPhone, principal, now);
+        deleteMobilePhoneForPrincipal(curPhone, principal);
     }
 
     @Override
-    public @Nonnull Long getUserId(@Nullable MobilePhone mobilePhone) 
+    public @Nonnull Long getPrincipal(@Nullable MobilePhone mobilePhone) 
             throws ValidationException , ItemNotFoundException, RepositoryServerException {
         if (mobilePhone == null) {
-            throw new ValidationException("Expecting non-null request paramter for getUserId, but received: mobilePhone=null");
+            throw new ValidationException("Expecting non-null request paramter for getPrincipal, but received: mobilePhone=null");
         }
-        return getUserIdForMobilePhone(mobilePhone);
+        return getPrincipalForMobilePhone(mobilePhone);
     }
 
     @Override
-    public @Nonnull MobilePhone getMobilePhone(@Nullable Long userId, boolean checkStaleness) 
+    public @Nonnull MobilePhone getMobilePhone(@Nullable Long principal, boolean checkStaleness) 
             throws ValidationException, ItemNotFoundException, StaleDataException, RepositoryServerException {
-        if (userId == null) {
-            throw new ValidationException("Expecting non-null request paramter for getMobilePhone, but received: userId=null");
+        if (principal == null) {
+            throw new ValidationException("Expecting non-null request paramter for getMobilePhone, but received: principal=null");
         }
-        return queryMobilePhoneForUserId(userId, checkStaleness);
+        return queryMobilePhoneForPrincipal(principal, checkStaleness);
     }
 
-    private @Nonnull Long getUserIdForMobilePhone(@Nonnull MobilePhone mobilePhone) throws ItemNotFoundException, RepositoryServerException {
+    private @Nonnull Long getPrincipalForMobilePhone(@Nonnull MobilePhone mobilePhone) throws ItemNotFoundException, RepositoryServerException {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put(PHONE_NUMBER_KEY, DynamoAttributeValueUtils.numberAttrValue(mobilePhone.getPhoneNumber()));
         key.put(COUNTRY_CODE_KEY, DynamoAttributeValueUtils.numberAttrValue(mobilePhone.getCountryCode()));
 
         GetItemRequest getItemRequest = new GetItemRequest().
-                withTableName(MOBILE_PHONE_TO_ID_TABLE_NAME).withKey(key).withAttributesToGet(USER_ID_KEY);
+                withTableName(MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME).withKey(key).withAttributesToGet(PRINCIPAL_KEY);
 
         GetItemResult getItemResult;
         try {
             getItemResult = awsDynamoDBDAO.consistentGetItem(getItemRequest);
         } catch (AmazonClientException error) {
-            LOG.error( String.format("Failed while attempting to getUserIdForMobilePhone %s from table %s.", getItemRequest, MOBILE_PHONE_TO_ID_TABLE_NAME), error);
+            LOG.error( String.format("Failed while attempting to getPrincipalForMobilePhone %s from table %s.", getItemRequest, MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME), error);
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(getItemResult.getItem())) {
-            LOG.info("The mobile phone {} in the getUserIdForMobilePhone request does not exist in the table.", mobilePhone);
+            LOG.info("The mobile phone {} in the getPrincipalForMobilePhone request does not exist in the table.", mobilePhone);
             throw new ItemNotFoundException();
         }
-        return DynamoAttributeValueUtils.getRequiredLongValue(getItemResult.getItem(), USER_ID_KEY);
+        return DynamoAttributeValueUtils.getRequiredLongValue(getItemResult.getItem(), PRINCIPAL_KEY);
 
     }
 
-    private void createMobilePhoneForUserId(@Nonnull MobilePhone mobilePhone, @Nonnull Long userId, @Nonnull Long activateTime) 
+    private void createMobilePhoneForPrincipal(@Nonnull MobilePhone mobilePhone, @Nonnull Long principal, @Nonnull Long activateTime) 
             throws DuplicateKeyException, RepositoryServerException {
         Map<String, AttributeValue> item = new HashMap<>();
         item.put(PHONE_NUMBER_KEY, DynamoAttributeValueUtils.numberAttrValue(mobilePhone.getPhoneNumber()));
         item.put(COUNTRY_CODE_KEY, DynamoAttributeValueUtils.numberAttrValue(mobilePhone.getCountryCode()));
-        item.put(USER_ID_KEY, DynamoAttributeValueUtils.numberAttrValue(userId));
+        item.put(PRINCIPAL_KEY, DynamoAttributeValueUtils.numberAttrValue(principal));
         item.put(ACTIVATE_IN_EPOCH_KEY, DynamoAttributeValueUtils.numberAttrValue(activateTime));
 
         Map<String, ExpectedAttributeValue> expected = new HashMap<>();
@@ -147,15 +146,15 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
         expected.put(COUNTRY_CODE_KEY, DynamoAttributeValueUtils.expectEmpty());
 
         PutItemRequest putItemRequest = new PutItemRequest().
-                withTableName(MOBILE_PHONE_TO_ID_TABLE_NAME).withItem(item).withExpected(expected);
+                withTableName(MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME).withItem(item).withExpected(expected);
 
         try {
             awsDynamoDBDAO.putItem(putItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.info("The mobile phone {} in createMobilePhoneForUserId request already existed.", mobilePhone);
+            LOG.info("The mobile phone {} in createMobilePhoneForPrincipal request already existed.", mobilePhone);
             throw new DuplicateKeyException();
         } catch (AmazonClientException error) {
-            LOG.error( String.format("Failed while attempting to createMobilePhoneForUserId %s to table %s.", putItemRequest, MOBILE_PHONE_TO_ID_TABLE_NAME), error);
+            LOG.error( String.format("Failed while attempting to createMobilePhoneForPrincipal %s to table %s.", putItemRequest, MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME), error);
             throw new RepositoryServerException(error);
         }
     }
@@ -163,47 +162,47 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
     /*
      * This method is protected for unit test
      */
-    protected void deleteMobilePhoneForUserId(@Nonnull MobilePhone mobilePhone, @Nonnull Long userId) 
+    protected void deleteMobilePhoneForPrincipal(@Nonnull MobilePhone mobilePhone, @Nonnull Long principal) 
             throws ItemNotFoundException, RepositoryServerException{
         Map<String, AttributeValue> key = new HashMap<>();
         key.put(PHONE_NUMBER_KEY, DynamoAttributeValueUtils.numberAttrValue(mobilePhone.getPhoneNumber()));
         key.put(COUNTRY_CODE_KEY, DynamoAttributeValueUtils.numberAttrValue(mobilePhone.getCountryCode()));
 
         Map<String, ExpectedAttributeValue> expected = new HashMap<>();
-        expected.put(USER_ID_KEY, DynamoAttributeValueUtils.expectEqual(DynamoAttributeValueUtils.numberAttrValue(userId)));
+        expected.put(PRINCIPAL_KEY, DynamoAttributeValueUtils.expectEqual(DynamoAttributeValueUtils.numberAttrValue(principal)));
 
         DeleteItemRequest deleteItemRequest = new DeleteItemRequest().
-                withTableName(MOBILE_PHONE_TO_ID_TABLE_NAME).withKey(key).withExpected(expected);
+                withTableName(MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME).withKey(key).withExpected(expected);
 
         try {
             awsDynamoDBDAO.deleteItem(deleteItemRequest);
         } catch (ResourceNotFoundException | ConditionalCheckFailedException error) {
-            LOG.info("The user id {} in deleteMobilePhoneForUserId request does not match with one in table.", userId);
+            LOG.info("The principal {} in deleteMobilePhoneForPrincipal request does not match with one in table.", principal);
             throw new ItemNotFoundException();
         } catch (AmazonClientException error) {
-            LOG.error( String.format("Failed while attempting to deleteMobilePhoneForUserId %s from table %s.", deleteItemRequest, MOBILE_PHONE_TO_ID_TABLE_NAME), error);
+            LOG.error( String.format("Failed while attempting to deleteMobilePhoneForPrincipal %s from table %s.", deleteItemRequest, MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME), error);
             throw new RepositoryServerException(error);
         }
     }
 
-    private @Nonnull MobilePhone queryMobilePhoneForUserId(@Nonnull Long userId, boolean checkStaleness) 
+    private @Nonnull MobilePhone queryMobilePhoneForPrincipal(@Nonnull Long principal, boolean checkStaleness) 
             throws ItemNotFoundException, StaleDataException, RepositoryServerException {
         Map<String, Condition> keyConditions = new HashMap<>();
-        keyConditions.put(USER_ID_KEY, new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                .withAttributeValueList(DynamoAttributeValueUtils.numberAttrValue(userId)));
+        keyConditions.put(PRINCIPAL_KEY, new Condition().withComparisonOperator(ComparisonOperator.EQ)
+                .withAttributeValueList(DynamoAttributeValueUtils.numberAttrValue(principal)));
 
-        QueryRequest queryRequest = new QueryRequest().withTableName(MOBILE_PHONE_TO_ID_TABLE_NAME).withIndexName(USER_ID_ACTIVATE_IN_EPOCH_GSI_KEY)
+        QueryRequest queryRequest = new QueryRequest().withTableName(MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME).withIndexName(PRINCIPAL_ACTIVATE_IN_EPOCH_GSI_KEY)
                 .withKeyConditions(keyConditions).withAttributesToGet(PHONE_NUMBER_KEY, COUNTRY_CODE_KEY).withScanIndexForward(false).withLimit(1);
 
         QueryResult queryResult;
         try {
             queryResult = awsDynamoDBDAO.queryOnce(queryRequest);
         } catch(AmazonClientException error) {
-            LOG.error( String.format("Failed while attempting to queryMobilePhoneForUserId %s from table %s.", queryRequest, MOBILE_PHONE_TO_ID_TABLE_NAME), error);
+            LOG.error( String.format("Failed while attempting to queryMobilePhoneForPrincipal %s from table %s.", queryRequest, MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME), error);
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(queryResult.getItems())) {
-            LOG.info("The user id {} in the queryMobilePhoneForUserId request does not exist in the table.", userId);
+            LOG.info("The principal {} in the queryMobilePhoneForPrincipal request does not exist in the table.", principal);
             throw new ItemNotFoundException();
         }
         MobilePhone mobilePhone = buildMobilePhone(queryResult.getItems().get(0));
@@ -211,24 +210,24 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
             return mobilePhone;
         }
         try {
-            Long userIdForMobilePhone = getUserIdForMobilePhone(mobilePhone);
-            if (userId.equals(userIdForMobilePhone)) {
+            Long principalForMobilePhone = getPrincipalForMobilePhone(mobilePhone);
+            if (principal.equals(principalForMobilePhone)) {
                 return mobilePhone;
             }
         } catch (ItemNotFoundException error) {}
-        LOG.warn("Found stale mobile phone {} for user id {}.", mobilePhone, userId);
+        LOG.warn("Found stale mobile phone {} for principal {}.", mobilePhone, principal);
         throw new StaleDataException();
     }
 
     public void createTable() 
             throws RepositoryClientException, RepositoryServerException {
 
-        GlobalSecondaryIndex userIdActivateInEpochGSI = new GlobalSecondaryIndex()
-        .withIndexName(USER_ID_ACTIVATE_IN_EPOCH_GSI_KEY)
+        GlobalSecondaryIndex principalActivateInEpochGSI = new GlobalSecondaryIndex()
+        .withIndexName(PRINCIPAL_ACTIVATE_IN_EPOCH_GSI_KEY)
         .withProvisionedThroughput(new ProvisionedThroughput(2L, 1L))
         .withProjection(new Projection().withProjectionType(ProjectionType.KEYS_ONLY))
         .withKeySchema(
-                new KeySchemaElement(USER_ID_KEY, KeyType.HASH),
+                new KeySchemaElement(PRINCIPAL_KEY, KeyType.HASH),
                 new KeySchemaElement(ACTIVATE_IN_EPOCH_KEY, KeyType.RANGE)
                 );
         GlobalSecondaryIndex countryCodePhoneNumberGSI = new GlobalSecondaryIndex()
@@ -241,21 +240,21 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
                 );
 
         CreateTableRequest createTableRequest = new CreateTableRequest()
-        .withTableName(MOBILE_PHONE_TO_ID_TABLE_NAME)
+        .withTableName(MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME)
         .withProvisionedThroughput(new ProvisionedThroughput(4L, 1L))
         .withAttributeDefinitions(
                 new AttributeDefinition(PHONE_NUMBER_KEY, ScalarAttributeType.N),
                 new AttributeDefinition(COUNTRY_CODE_KEY, ScalarAttributeType.N),
-                new AttributeDefinition(USER_ID_KEY, ScalarAttributeType.N),
+                new AttributeDefinition(PRINCIPAL_KEY, ScalarAttributeType.N),
                 new AttributeDefinition(ACTIVATE_IN_EPOCH_KEY, ScalarAttributeType.N))
                 .withKeySchema(new KeySchemaElement(PHONE_NUMBER_KEY, KeyType.HASH), 
                         new KeySchemaElement(COUNTRY_CODE_KEY, KeyType.RANGE))
-                        .withGlobalSecondaryIndexes(userIdActivateInEpochGSI, countryCodePhoneNumberGSI);
+                        .withGlobalSecondaryIndexes(principalActivateInEpochGSI, countryCodePhoneNumberGSI);
         
         try {
             awsDynamoDBDAO.createTable(createTableRequest);
         } catch (ResourceInUseException error) {
-            throw new RepositoryClientException(String.format("Table %s attempted to create already exists", MOBILE_PHONE_TO_ID_TABLE_NAME));
+            throw new RepositoryClientException(String.format("Table %s attempted to create already exists", MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME));
         } catch (AmazonClientException error) {
             throw new RepositoryServerException(error);
         }
@@ -264,9 +263,9 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
     public void deleteTable() 
             throws RepositoryClientException, RepositoryServerException {
         try {
-            awsDynamoDBDAO.deleteTable(new DeleteTableRequest().withTableName(MOBILE_PHONE_TO_ID_TABLE_NAME));
+            awsDynamoDBDAO.deleteTable(new DeleteTableRequest().withTableName(MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME));
         } catch (ResourceNotFoundException error) {
-            throw new RepositoryClientException(String.format("Table %s attempted to delete does not exist", MOBILE_PHONE_TO_ID_TABLE_NAME));
+            throw new RepositoryClientException(String.format("Table %s attempted to delete does not exist", MOBILE_PHONE_TO_PRINCIPAL_TABLE_NAME));
         } catch (AmazonClientException error) {
             throw new RepositoryServerException(error);
         }

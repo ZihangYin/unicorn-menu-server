@@ -14,6 +14,7 @@ import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationToken
 @Singleton
 public interface AuthenticationTokenTable extends Table {
     
+    public static final String AUTHENTICATION_TOKEN_TABLE_NAME = "AUTHENTICATION_TOKEN_TABLE";
     /**
      * Persist authentication token 
      * 

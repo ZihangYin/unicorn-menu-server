@@ -11,24 +11,24 @@ import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 public interface AuthenticationRepository {
     
     /**
-     * Get the principal from login_name, the principal in this case is user_id
+     * Get the principal for login_name
      * @param loginName @Nullable
      * @return
      * @throws ValidationException if request is invalid
      * @throws ItemNotFoundException if login_name attempted to get does not exist
      * @throws RepositoryServerException internal server error
      */
-    public @Nonnull Long getPrincipalFromLoginName(@Nullable String loginName) 
+    public @Nonnull Long getPrincipalForLoginName(@Nullable String loginName) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
     
     /**
-     * Get the principal_authorization_info from principal
-     * @param userId @Nullable
+     * Get the principal_authorization_info for principal
+     * @param principal @Nullable
      * @return
      * @throws ValidationException if request is invalid
-     * @throws ItemNotFoundException if user_id attempted to get does not exist
+     * @throws ItemNotFoundException if user_principal attempted to get does not exist
      * @throws RepositoryServerException internal server error
      */
-    public @Nonnull PrincipalAuthenticationInfo getAuthorizationInfo(@Nullable Long principal) 
+    public @Nonnull PrincipalAuthenticationInfo getAuthorizationInfoForPrincipal(@Nullable Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
 }

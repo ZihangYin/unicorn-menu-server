@@ -16,14 +16,14 @@ import com.unicorn.rest.repository.exception.DuplicateKeyException;
 import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
-import com.unicorn.rest.repository.impl.dynamodb.DynamoEmailAddressToUserIdTable;
-import com.unicorn.rest.repository.impl.dynamodb.DynamoMobilePhoneToUserIdTable;
-import com.unicorn.rest.repository.impl.dynamodb.DynamoUserNameToUserIdTable;
+import com.unicorn.rest.repository.impl.dynamodb.DynamoEmailAddressToPrincipalTable;
+import com.unicorn.rest.repository.impl.dynamodb.DynamoMobilePhoneToPrincipalTable;
+import com.unicorn.rest.repository.impl.dynamodb.DynamoNameToPrincipalTable;
 import com.unicorn.rest.repository.impl.dynamodb.DynamoUserProfileTable;
+import com.unicorn.rest.repository.model.DisplayName;
 import com.unicorn.rest.repository.model.EmailAddress;
 import com.unicorn.rest.repository.model.MobilePhone;
-import com.unicorn.rest.repository.model.UserDisplayName;
-import com.unicorn.rest.repository.model.UserName;
+import com.unicorn.rest.repository.model.Name;
 import com.unicorn.rest.server.injector.TestRepositoryTableBinder;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
@@ -36,8 +36,8 @@ public class UserRepositoryImplTest {
     public static void setUpRepository() throws Exception {
         testRepositoryTableBinder = new TestRepositoryTableBinder();
         userRepositoryImpl = new UserRepositoryImpl(testRepositoryTableBinder.getMockedDynamoUserProfileTable(),
-                testRepositoryTableBinder.getMockedDynamoUserNameToUserIdTable(), testRepositoryTableBinder.getMockedDynamoMobilePhoneToUserIdTable(),
-                testRepositoryTableBinder.getMockedDynamoEmailAddressToUserIdTable());
+                testRepositoryTableBinder.getMockedDynamoNameToPrincipalTable(), testRepositoryTableBinder.getMockedDynamoMobilePhoneToPrincipalTable(),
+                testRepositoryTableBinder.getMockedDynamoEmailAddressToPrincipalTable());
     }
 
     @After
@@ -46,45 +46,45 @@ public class UserRepositoryImplTest {
          * Reset the mocking on this object so that the field can be safely re-used between tests.
          */
         Mockito.reset(testRepositoryTableBinder.getMockedDynamoUserProfileTable());
-        Mockito.reset(testRepositoryTableBinder.getMockedDynamoUserNameToUserIdTable());
-        Mockito.reset(testRepositoryTableBinder.getMockedDynamoMobilePhoneToUserIdTable());
-        Mockito.reset(testRepositoryTableBinder.getMockedDynamoEmailAddressToUserIdTable());
+        Mockito.reset(testRepositoryTableBinder.getMockedDynamoNameToPrincipalTable());
+        Mockito.reset(testRepositoryTableBinder.getMockedDynamoMobilePhoneToPrincipalTable());
+        Mockito.reset(testRepositoryTableBinder.getMockedDynamoEmailAddressToPrincipalTable());
     }
 
-    private void mockGetUserIdFromUserNameHappyCase(UserName userName, Long expectedUserId) 
+    private void mockGetUserPrincipalFromUserNameHappyCase(Name userName, Long expectedUserPrincipal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        DynamoUserNameToUserIdTable mockedDynamoUserNameToUserIdTable = testRepositoryTableBinder.getMockedDynamoUserNameToUserIdTable();
-        Mockito.doReturn(expectedUserId).when(mockedDynamoUserNameToUserIdTable).getCurrentUserId(userName);
+        DynamoNameToPrincipalTable mockedDynamoNameToPrincipalTable = testRepositoryTableBinder.getMockedDynamoNameToPrincipalTable();
+        Mockito.doReturn(expectedUserPrincipal).when(mockedDynamoNameToPrincipalTable).getCurrentPrincipal(userName);
     }
 
-    private void mockGetUserIdFromMobilePhoneHappyCase(MobilePhone mobilePhone, Long expectedUserId) 
+    private void mockGetUserPrincipalFromMobilePhoneHappyCase(MobilePhone mobilePhone, Long expectedUserPrincipal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        DynamoMobilePhoneToUserIdTable mockedDynamoMobilePhoneToUserIdTable = testRepositoryTableBinder.getMockedDynamoMobilePhoneToUserIdTable();
-        Mockito.doReturn(expectedUserId).when(mockedDynamoMobilePhoneToUserIdTable).getUserId(mobilePhone);
+        DynamoMobilePhoneToPrincipalTable mockedDynamoMobilePhoneToPrincipalTable = testRepositoryTableBinder.getMockedDynamoMobilePhoneToPrincipalTable();
+        Mockito.doReturn(expectedUserPrincipal).when(mockedDynamoMobilePhoneToPrincipalTable).getPrincipal(mobilePhone);
     }
 
-    private void mockGetUserIdFromEmailAddressHappyCase(EmailAddress emailAddress, Long expectedUserId) 
+    private void mockGetUserPrincipalFromEmailAddressHappyCase(EmailAddress emailAddress, Long expectedUserPrincipal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        DynamoEmailAddressToUserIdTable mockedDynamoEmailAddressToUserIdTable = testRepositoryTableBinder.getMockedDynamoEmailAddressToUserIdTable();
-        Mockito.doReturn(expectedUserId).when(mockedDynamoEmailAddressToUserIdTable).getUserId(emailAddress);
+        DynamoEmailAddressToPrincipalTable mockedDynamoEmailAddressToPrincipalTable = testRepositoryTableBinder.getMockedDynamoEmailAddressToPrincipalTable();
+        Mockito.doReturn(expectedUserPrincipal).when(mockedDynamoEmailAddressToPrincipalTable).getPrincipal(emailAddress);
     }
 
-    private void mockGetUserIdFromUserNameNoUserName(UserName userName) 
+    private void mockGetUserPrincipalFromUserNameNoUserName(Name userName) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        DynamoUserNameToUserIdTable mockedDynamoUserNameToUserIdTable = testRepositoryTableBinder.getMockedDynamoUserNameToUserIdTable();
-        Mockito.doThrow(new ItemNotFoundException()).when(mockedDynamoUserNameToUserIdTable).getCurrentUserId(userName);
+        DynamoNameToPrincipalTable mockedDynamoNameToPrincipalTable = testRepositoryTableBinder.getMockedDynamoNameToPrincipalTable();
+        Mockito.doThrow(new ItemNotFoundException()).when(mockedDynamoNameToPrincipalTable).getCurrentPrincipal(userName);
     }
 
-    private void mockGetUserIdFromMobilePhoneNoMobilePhone(MobilePhone mobilePhone) 
+    private void mockGetUserPrincipalFromMobilePhoneNoMobilePhone(MobilePhone mobilePhone) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        DynamoMobilePhoneToUserIdTable mockedDynamoMobilePhoneToUserIdTable = testRepositoryTableBinder.getMockedDynamoMobilePhoneToUserIdTable();
-        Mockito.doThrow(new ItemNotFoundException()).when(mockedDynamoMobilePhoneToUserIdTable).getUserId(mobilePhone);
+        DynamoMobilePhoneToPrincipalTable mockedDynamoMobilePhoneToPrincipalTable = testRepositoryTableBinder.getMockedDynamoMobilePhoneToPrincipalTable();
+        Mockito.doThrow(new ItemNotFoundException()).when(mockedDynamoMobilePhoneToPrincipalTable).getPrincipal(mobilePhone);
     }
 
-    private void mockGetUserIdFromEmailAddressNoEmailAddress(EmailAddress emailAddress) 
+    private void mockGetUserPrincipalFromEmailAddressNoEmailAddress(EmailAddress emailAddress) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        DynamoEmailAddressToUserIdTable mockedDynamoEmailAddressToUserIdTable = testRepositoryTableBinder.getMockedDynamoEmailAddressToUserIdTable();
-        Mockito.doThrow(new ItemNotFoundException()).when(mockedDynamoEmailAddressToUserIdTable).getUserId(emailAddress);
+        DynamoEmailAddressToPrincipalTable mockedDynamoEmailAddressToPrincipalTable = testRepositoryTableBinder.getMockedDynamoEmailAddressToPrincipalTable();
+        Mockito.doThrow(new ItemNotFoundException()).when(mockedDynamoEmailAddressToPrincipalTable).getPrincipal(emailAddress);
     }
     
     private void mockCreateUserInUserProfileHappyCase() 
@@ -94,14 +94,14 @@ public class UserRepositoryImplTest {
         .createUser(Mockito.anyLong(), Mockito.any(), Mockito.any(ByteBuffer.class), Mockito.any(ByteBuffer.class));
     }
     
-    private void mockCreateUserInUserProfileDuplicateUserIdOnce() 
+    private void mockCreateUserInUserProfileDuplicateUserPrincipalOnce() 
             throws ValidationException, DuplicateKeyException, RepositoryServerException  {
         DynamoUserProfileTable mockedDynamoUserProfileTable = testRepositoryTableBinder.getMockedDynamoUserProfileTable();
         Mockito.doThrow(new DuplicateKeyException()).doReturn(0L).when(mockedDynamoUserProfileTable)
         .createUser(Mockito.anyLong(), Mockito.any(), Mockito.any(ByteBuffer.class), Mockito.any(ByteBuffer.class));
     }
     
-    private void mockCreateUserInUserProfileDuplicateUserId() 
+    private void mockCreateUserInUserProfileDuplicateUserPrincipal() 
             throws ValidationException, DuplicateKeyException, RepositoryServerException  {
         DynamoUserProfileTable mockedDynamoUserProfileTable = testRepositoryTableBinder.getMockedDynamoUserProfileTable();
         Mockito.doThrow(new DuplicateKeyException()).when(mockedDynamoUserProfileTable)
@@ -117,20 +117,21 @@ public class UserRepositoryImplTest {
     
     private void mockCreateUserNameToIDHappyCase() 
             throws ValidationException, DuplicateKeyException, RepositoryServerException  {
-        DynamoUserNameToUserIdTable mockedDynamoUserNameToUserIdTable = testRepositoryTableBinder.getMockedDynamoUserNameToUserIdTable();
-        Mockito.doNothing().when(mockedDynamoUserNameToUserIdTable).createUserNameForUserId(Mockito.any(), Mockito.anyLong());
+        DynamoNameToPrincipalTable mockedDynamoNameToPrincipalTable = testRepositoryTableBinder.getMockedDynamoNameToPrincipalTable();
+        Mockito.doNothing().when(mockedDynamoNameToPrincipalTable).createNameForPrincipal(Mockito.any(), Mockito.anyLong());
     }
     
     private void mockCreateUserNameToIDDuplicateUserUserName() 
             throws ValidationException, DuplicateKeyException, RepositoryServerException  {
-        DynamoUserNameToUserIdTable mockedDynamoUserNameToUserIdTable = testRepositoryTableBinder.getMockedDynamoUserNameToUserIdTable();
-        Mockito.doThrow(new DuplicateKeyException()).when(mockedDynamoUserNameToUserIdTable).createUserNameForUserId(Mockito.any(), Mockito.anyLong());
+        DynamoNameToPrincipalTable mockedDynamoNameToPrincipalTable = testRepositoryTableBinder.getMockedDynamoNameToPrincipalTable();
+        Mockito.doThrow(new DuplicateKeyException()).when(mockedDynamoNameToPrincipalTable).createNameForPrincipal(Mockito.any(), Mockito.anyLong());
     }
     
     private void mockCreateUserNameToIDServerError() 
             throws ValidationException, DuplicateKeyException, RepositoryServerException  {
-        DynamoUserNameToUserIdTable mockedDynamoUserNameToUserIdTable = testRepositoryTableBinder.getMockedDynamoUserNameToUserIdTable();
-        Mockito.doThrow(new RepositoryServerException("internal_Server_error")).when(mockedDynamoUserNameToUserIdTable).createUserNameForUserId(Mockito.any(), Mockito.anyLong());
+        DynamoNameToPrincipalTable mockedDynamoNameToPrincipalTable = testRepositoryTableBinder.getMockedDynamoNameToPrincipalTable();
+        Mockito.doThrow(new RepositoryServerException("internal_Server_error"))
+        .when(mockedDynamoNameToPrincipalTable).createNameForPrincipal(Mockito.any(), Mockito.anyLong());
     }
 
 
@@ -138,40 +139,40 @@ public class UserRepositoryImplTest {
      * Happy Case
      */
     @Test
-    public void testGetUserIdFromUserNameHappyCase() 
+    public void testGetUserPrincipalFromUserNameHappyCase() 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         String loginName = "user_name";
-        Long userId = SimpleFlakeKeyGenerator.generateKey();
+        Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
 
-        mockGetUserIdFromUserNameHappyCase(new UserName(loginName), userId);
-        assertEquals(userId, userRepositoryImpl.getPrincipalFromLoginName(loginName));
+        mockGetUserPrincipalFromUserNameHappyCase(Name.validateUserName(loginName), userPrincipal);
+        assertEquals(userPrincipal, userRepositoryImpl.getPrincipalForLoginName(loginName));
     }
 
     @Test
-    public void testGetUserIdFromMobilePhoneHappyCase() 
+    public void testGetUserPrincipalFromMobilePhoneHappyCase() 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         String loginName = "+19191234567";
-        Long userId = SimpleFlakeKeyGenerator.generateKey();
+        Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
 
-        mockGetUserIdFromMobilePhoneHappyCase(new MobilePhone(loginName, null), userId);
-        assertEquals(userId, userRepositoryImpl.getPrincipalFromLoginName(loginName));
+        mockGetUserPrincipalFromMobilePhoneHappyCase(new MobilePhone(loginName, null), userPrincipal);
+        assertEquals(userPrincipal, userRepositoryImpl.getPrincipalForLoginName(loginName));
     }
 
     @Test
-    public void testGetUserIdFromEmailAddressHappyCase() 
+    public void testGetUserPrincipalFromEmailAddressHappyCase() 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         String loginName = "test@test.com";
-        Long userId = SimpleFlakeKeyGenerator.generateKey();
+        Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
 
-        mockGetUserIdFromEmailAddressHappyCase(new EmailAddress(loginName), userId);
-        assertEquals(userId, userRepositoryImpl.getPrincipalFromLoginName(loginName));
+        mockGetUserPrincipalFromEmailAddressHappyCase(new EmailAddress(loginName), userPrincipal);
+        assertEquals(userPrincipal, userRepositoryImpl.getPrincipalForLoginName(loginName));
     }
     
     @Test
     public void testCreateUserHappyCase() 
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
-        UserName userName = new UserName("user_name");
-        UserDisplayName userDisplayName = new UserDisplayName("user_display_name");
+        Name userName = Name.validateUserName("user_name");
+        DisplayName userDisplayName = DisplayName.validateUserDisplayName("user_display_name");
         String password = "1a2b3c";
         
         mockCreateUserInUserProfileHappyCase();
@@ -180,13 +181,13 @@ public class UserRepositoryImplTest {
     }
     
     @Test
-    public void testCreateUserDuplicateUserIdOnceHappyCase() 
+    public void testCreateUserDuplicateUserPrincipalOnceHappyCase() 
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
-        UserName userName = new UserName("user_name");
-        UserDisplayName userDisplayName = new UserDisplayName("user_display_name");
+        Name userName = Name.validateUserName("user_name");
+        DisplayName userDisplayName = DisplayName.validateUserDisplayName("user_display_name");
         String password = "1a2b3c";
         
-        mockCreateUserInUserProfileDuplicateUserIdOnce();
+        mockCreateUserInUserProfileDuplicateUserPrincipalOnce();
         mockCreateUserNameToIDHappyCase();
         userRepositoryImpl.registerUser(userName, userDisplayName, password);
     }
@@ -195,52 +196,52 @@ public class UserRepositoryImplTest {
      * Bad Request
      */
     @Test
-    public void testGetUserIdFromUserNameDoesNotExist() 
+    public void testGetUserPrincipalFromUserNameDoesNotExist() 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         String loginName = "user_name";
-        mockGetUserIdFromUserNameNoUserName(new UserName(loginName));
+        mockGetUserPrincipalFromUserNameNoUserName(Name.validateUserName(loginName));
         try {
-            userRepositoryImpl.getPrincipalFromLoginName(loginName);
+            userRepositoryImpl.getPrincipalForLoginName(loginName);
         } catch (ItemNotFoundException error) {
             return;
         }
-        fail("Failed while running testGetUserIdFromUserNameDoesNotExist");
+        fail("Failed while running testGetUserPrincipalFromUserNameDoesNotExist");
     }
 
     @Test
-    public void testGetUserIdFromMobilePhoneDoesNotExist() 
+    public void testGetUserPrincipalFromMobilePhoneDoesNotExist() 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         String loginName = "+19191234567";
-        mockGetUserIdFromMobilePhoneNoMobilePhone(new MobilePhone(loginName, null));
+        mockGetUserPrincipalFromMobilePhoneNoMobilePhone(new MobilePhone(loginName, null));
         try {
-            userRepositoryImpl.getPrincipalFromLoginName(loginName);
+            userRepositoryImpl.getPrincipalForLoginName(loginName);
         } catch (ItemNotFoundException error) {
             return;
         }
-        fail("Failed while running testGetUserIdFromMobilePhoneDoesNotExist");
+        fail("Failed while running testGetUserPrincipalFromMobilePhoneDoesNotExist");
     }
 
     @Test
-    public void testGetUserIdFromEmailAddressDoesNotExist() 
+    public void testGetUserPrincipalFromEmailAddressDoesNotExist() 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         String loginName = "test@test.com";
-        mockGetUserIdFromEmailAddressNoEmailAddress(new EmailAddress(loginName));
+        mockGetUserPrincipalFromEmailAddressNoEmailAddress(new EmailAddress(loginName));
         try {
-            userRepositoryImpl.getPrincipalFromLoginName(loginName);
+            userRepositoryImpl.getPrincipalForLoginName(loginName);
         } catch (ItemNotFoundException error) {
             return;
         }
-        fail("Failed while running testGetUserIdFromEmailAddressDoesNotExist");
+        fail("Failed while running testGetUserPrincipalFromEmailAddressDoesNotExist");
     }
     
     @Test
     public void testCreateUserDuplicateUserName() 
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
-        UserName userName = new UserName("user_name");
-        UserDisplayName userDisplayName = new UserDisplayName("user_display_name");
+        Name userName = Name.validateUserName("user_name");
+        DisplayName userDisplayName = DisplayName.validateUserDisplayName("user_display_name");
         String password = "1a2b3c";
         
-        mockCreateUserInUserProfileDuplicateUserIdOnce();
+        mockCreateUserInUserProfileDuplicateUserPrincipalOnce();
         mockCreateUserNameToIDDuplicateUserUserName();
         try {
             userRepositoryImpl.registerUser(userName, userDisplayName, password);
@@ -254,27 +255,27 @@ public class UserRepositoryImplTest {
      * Internal Server Errors
      */
     @Test
-    public void testCreateUserCreateUserInUserProfileDuplicateUserId() 
+    public void testCreateUserCreateUserInUserProfileDuplicateUserPrincipal() 
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
-        UserName userName = new UserName("user_name");
-        UserDisplayName userDisplayName = new UserDisplayName("user_display_name");
+        Name userName = Name.validateUserName("user_name");
+        DisplayName userDisplayName = DisplayName.validateUserDisplayName("user_display_name");
         String password = "1a2b3c";
         
-        mockCreateUserInUserProfileDuplicateUserId();
+        mockCreateUserInUserProfileDuplicateUserPrincipal();
         try {
             userRepositoryImpl.registerUser(userName, userDisplayName, password);
         } catch (RepositoryServerException error) {
             assertEquals(DuplicateKeyException.class, error.getCause().getClass());
             return;
         }
-        fail("Failed while running testCreateUserDuplicateUserId");
+        fail("Failed while running testCreateUserDuplicateUserPrincipal");
     }
     
     @Test
     public void testCreateUserCreateUserInUserProfileServerError() 
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
-        UserName userName = new UserName("user_name");
-        UserDisplayName userDisplayName = new UserDisplayName("user_display_name");
+        Name userName = Name.validateUserName("user_name");
+        DisplayName userDisplayName = DisplayName.validateUserDisplayName("user_display_name");
         String password = "1a2b3c";
         
         mockCreateUserInUserProfileServerError();
@@ -289,8 +290,8 @@ public class UserRepositoryImplTest {
     @Test
     public void testCreateUserCreateUserNameToIDServerError() 
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
-        UserName userName = new UserName("user_name");
-        UserDisplayName userDisplayName = new UserDisplayName("user_display_name");
+        Name userName = Name.validateUserName("user_name");
+        DisplayName userDisplayName = DisplayName.validateUserDisplayName("user_display_name");
         String password = "1a2b3c";
         
         mockCreateUserInUserProfileHappyCase();

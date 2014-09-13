@@ -37,9 +37,9 @@ import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.impl.AuthenticationTokenRepositoryImpl;
 import com.unicorn.rest.repository.impl.UserRepositoryImpl;
 import com.unicorn.rest.repository.model.AuthenticationToken;
+import com.unicorn.rest.repository.model.DisplayName;
+import com.unicorn.rest.repository.model.Name;
 import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
-import com.unicorn.rest.repository.model.UserDisplayName;
-import com.unicorn.rest.repository.model.UserName;
 import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationTokenType;
 import com.unicorn.rest.server.GrizzlyServerTestBase;
 import com.unicorn.rest.server.filter.ActivitiesSecurityFilter;
@@ -81,9 +81,9 @@ public class ActivitiesSecurityFilterTest extends GrizzlyServerTestBase {
     private void mockUserAuthenticationHappyCase(String loginName, String password, PrincipalAuthenticationInfo expectedUserAuthorizationInfo) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
-        Long userId = expectedUserAuthorizationInfo.getPrincipal();
-        Mockito.doReturn(userId).when(mockedUserRepository).getPrincipalFromLoginName(loginName);
-        Mockito.doReturn(expectedUserAuthorizationInfo).when(mockedUserRepository).getAuthorizationInfo(userId);
+        Long userPrincipal = expectedUserAuthorizationInfo.getPrincipal();
+        Mockito.doReturn(userPrincipal).when(mockedUserRepository).getPrincipalForLoginName(loginName);
+        Mockito.doReturn(expectedUserAuthorizationInfo).when(mockedUserRepository).getAuthorizationInfoForPrincipal(userPrincipal);
     }
 
     private void mockTokenPersistencyHappyCase() 
@@ -98,11 +98,11 @@ public class ActivitiesSecurityFilterTest extends GrizzlyServerTestBase {
         Mockito.doNothing().when(mockedTokenRepository).revokeToken(tokenType, token, principal);
     }
 
-    private void mockCreateNewUserHappyCase(UserRequest userRequest, Long expectedUserId) 
+    private void mockCreateNewUserHappyCase(UserRequest userRequest, Long expectedUserPrincipal) 
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
-        Mockito.doReturn(expectedUserId).when(mockedUserRepository).registerUser(
-                new UserName(userRequest.getUserName()), new UserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
+        Mockito.doReturn(expectedUserPrincipal).when(mockedUserRepository).registerUser(
+                Name.validateUserName(userRequest.getUserName()), DisplayName.validateUserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
     }
 
     private void mockTokenFoundHappyCase(AuthenticationTokenType tokenType, String token, AuthenticationToken authenticationToken) 
@@ -163,8 +163,8 @@ public class ActivitiesSecurityFilterTest extends GrizzlyServerTestBase {
         userRequest.setPassword("1a2b3c");
         userRequest.setUserDisplayName("user_display_name");
 
-        Long userId = SimpleFlakeKeyGenerator.generateKey();
-        mockCreateNewUserHappyCase(userRequest, userId);
+        Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
+        mockCreateNewUserHappyCase(userRequest, userPrincipal);
         Response response = webTarget.path("/v1/users").request(MediaType.APPLICATION_JSON).post(Entity.entity(userRequest, MediaType.APPLICATION_JSON));
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
         assertNull(response.readEntity(Object.class));

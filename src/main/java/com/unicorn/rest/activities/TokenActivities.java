@@ -128,8 +128,8 @@ public class TokenActivities {
             AuthenticationRepository authenticationRepository, TokenErrDescFormatter tokenErrDescFormatter) 
             throws BadTokenRequestException, ValidationException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
         try {
-            Long principal = authenticationRepository.getPrincipalFromLoginName(loginName);
-            PrincipalAuthenticationInfo authenticationInfo = authenticationRepository.getAuthorizationInfo(principal);
+            Long principal = authenticationRepository.getPrincipalForLoginName(loginName);
+            PrincipalAuthenticationInfo authenticationInfo = authenticationRepository.getAuthorizationInfoForPrincipal(principal);
 
             if (AuthenticationSecretUtils.authenticateSecret(clientSecret, authenticationInfo.getPassword(), authenticationInfo.getSalt())) {
                 return AuthenticationToken.generateTokenBuilder().tokenType(AuthenticationTokenType.ACCESS_TOKEN).principal(principal).build();

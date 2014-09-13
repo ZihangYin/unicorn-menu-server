@@ -74,16 +74,16 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
     private void mockUserAuthenticationHappyCase(String loginName, String password, PrincipalAuthenticationInfo expectedUserAuthorizationInfo) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
-        Long userId = expectedUserAuthorizationInfo.getPrincipal();
-        Mockito.doReturn(userId).when(mockedUserRepository).getPrincipalFromLoginName(loginName);
-        Mockito.doReturn(expectedUserAuthorizationInfo).when(mockedUserRepository).getAuthorizationInfo(userId);
+        Long principal = expectedUserAuthorizationInfo.getPrincipal();
+        Mockito.doReturn(principal).when(mockedUserRepository).getPrincipalForLoginName(loginName);
+        Mockito.doReturn(expectedUserAuthorizationInfo).when(mockedUserRepository).getAuthorizationInfoForPrincipal(principal);
     }
 
     private void mockUserAuthenticationNoUser(String loginName, String password) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
         ItemNotFoundException itemNotFound = new ItemNotFoundException();
-        Mockito.doThrow(itemNotFound).when(mockedUserRepository).getPrincipalFromLoginName(loginName);
+        Mockito.doThrow(itemNotFound).when(mockedUserRepository).getPrincipalForLoginName(loginName);
     }
 
     private void mockTokenPersistencyHappyCase() 

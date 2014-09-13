@@ -10,35 +10,37 @@ import com.unicorn.rest.repository.exception.DuplicateKeyException;
 import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
+import com.unicorn.rest.repository.model.DisplayName;
 import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
-import com.unicorn.rest.repository.model.UserDisplayName;
 
 @Singleton
 public interface UserProfileTable extends Table {
+    
+    public static final String USER_PROFILE_TABLE_NAME = "USER_PROFILE_TABLE";
     /**
      * Create new user with required minimum parameters
      *  
-     * @param userId @Nullable
+     * @param userPrincipal @Nullable
      * @param userDisplayName @Nullable
      * @param password @Nullable
      * @param salt @Nullable
      * @return
      * @throws ValidationException if request is invalid
-     * @throws DuplicateKeyException if the user_id already exists
+     * @throws DuplicateKeyException if the user_principal already exists
      * @throws RepositoryServerException internal server error
      */
-    public Long createUser(@Nullable Long userId, @Nullable UserDisplayName userDisplayName, @Nullable ByteBuffer password, @Nullable ByteBuffer salt) 
+    public Long createUser(@Nullable Long userPrincipal, @Nullable DisplayName userDisplayName, @Nullable ByteBuffer password, @Nullable ByteBuffer salt) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException;
     
     /**
      * Build user_authorization_info from attributes, which contains user_display_name, hashed password and salt.
      * 
-     * @param userId @Nullable
+     * @param userPrincipal @Nullable
      * @return 
      * @throws ValidationException if request is invalid
-     * @throws ItemNotFoundException if user_id does not exist
+     * @throws ItemNotFoundException if user_principal does not exist
      * @throws RepositoryServerException internal server error
      */
-    public @Nonnull PrincipalAuthenticationInfo getUserAuthorizationInfo(@Nullable Long userId) 
+    public @Nonnull PrincipalAuthenticationInfo getUserAuthorizationInfo(@Nullable Long userPrincipal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
 }

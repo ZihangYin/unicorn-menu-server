@@ -22,8 +22,8 @@ import com.unicorn.rest.activity.model.UserRequest;
 import com.unicorn.rest.repository.UserRepository;
 import com.unicorn.rest.repository.exception.DuplicateKeyException;
 import com.unicorn.rest.repository.exception.ValidationException;
-import com.unicorn.rest.repository.model.UserDisplayName;
-import com.unicorn.rest.repository.model.UserName;
+import com.unicorn.rest.repository.model.DisplayName;
+import com.unicorn.rest.repository.model.Name;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 
 @Path("/v1/users")
@@ -49,8 +49,9 @@ public class UserActivities {
                 throw new ValidationException("Expecting non-null request paramter for createNewUser, but received: userRequest=null");
             }
             
-            UserName userName = new UserName(RequestValidator.validateRequiredParameter(UserRequest.USER_NAME, userRequest.getUserName()));
-            UserDisplayName userDisplayName = new UserDisplayName(RequestValidator.validateRequiredParameter(UserRequest.USER_DISPLAY_NAME, userRequest.getUserDisplayName()));
+            Name userName = Name.validateUserName(RequestValidator.validateRequiredParameter(UserRequest.USER_NAME, userRequest.getUserName()));
+            DisplayName userDisplayName = DisplayName.validateUserDisplayName(
+                    RequestValidator.validateRequiredParameter(UserRequest.USER_DISPLAY_NAME, userRequest.getUserDisplayName()));
             String password = RequestValidator.validateRequiredParameter(UserRequest.PASSWORD, userRequest.getPassword());
             if (!AuthenticationSecretUtils.validateStrongSecret(password)) {
                 throw new WeakPasswordException();

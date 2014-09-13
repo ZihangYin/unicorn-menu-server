@@ -28,8 +28,8 @@ import com.unicorn.rest.repository.exception.DuplicateKeyException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.impl.UserRepositoryImpl;
-import com.unicorn.rest.repository.model.UserDisplayName;
-import com.unicorn.rest.repository.model.UserName;
+import com.unicorn.rest.repository.model.DisplayName;
+import com.unicorn.rest.repository.model.Name;
 import com.unicorn.rest.server.GrizzlyServerTestBase;
 import com.unicorn.rest.server.injector.TestRepositoryBinder;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
@@ -55,11 +55,11 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
         Mockito.reset(repositoryBinder.getMockedUserRepository());
     }
     
-    private void mockCreateNewUserHappyCase(UserRequest userRequest, Long expectedUserId) 
+    private void mockCreateNewUserHappyCase(UserRequest userRequest, Long expectedUserPrincipal) 
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
-        Mockito.doReturn(expectedUserId).when(mockedUserRepository).registerUser(
-                new UserName(userRequest.getUserName()), new UserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
+        Mockito.doReturn(expectedUserPrincipal).when(mockedUserRepository).registerUser(
+                Name.validateUserName(userRequest.getUserName()), DisplayName.validateUserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
     }
     
     private void mockCreateNewUserDuplicateUserName(UserRequest userRequest) 
@@ -67,7 +67,7 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
         DuplicateKeyException duplicateKey = new DuplicateKeyException();
         Mockito.doThrow(duplicateKey).when(mockedUserRepository).registerUser(
-                new UserName(userRequest.getUserName()), new UserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
+                Name.validateUserName(userRequest.getUserName()), DisplayName.validateUserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
     }
     
     private void mockCreateNewUserServerError(UserRequest userRequest) 
@@ -75,7 +75,7 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
         RepositoryServerException internalError = new RepositoryServerException("Internal Server Error", null);
         Mockito.doThrow(internalError).when(mockedUserRepository).registerUser(
-                new UserName(userRequest.getUserName()), new UserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
+                Name.validateUserName(userRequest.getUserName()), DisplayName.validateUserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
     }
     
 
@@ -89,8 +89,8 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
         userRequest.setPassword("1a2b3c");
         userRequest.setUserDisplayName("user_display_name");
         
-        Long userId = SimpleFlakeKeyGenerator.generateKey();
-        mockCreateNewUserHappyCase(userRequest, userId);
+        Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
+        mockCreateNewUserHappyCase(userRequest, userPrincipal);
         Response response = webTarget.request(MediaType.APPLICATION_JSON).post(Entity.entity(userRequest, MediaType.APPLICATION_JSON));
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
         assertNull(response.readEntity(Object.class));
@@ -102,11 +102,11 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
         userRequest.setUserName("user_name");
         userRequest.setPassword("1a2b3c");
         userRequest.setUserDisplayName("user_display_name");
-        userRequest.setUserId(0L);
+        userRequest.setUserPrincipal(0L);
         userRequest.setEmailAddress(null);
         
-        Long userId = SimpleFlakeKeyGenerator.generateKey();
-        mockCreateNewUserHappyCase(userRequest, userId);
+        Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
+        mockCreateNewUserHappyCase(userRequest, userPrincipal);
         Response response = webTarget.request(MediaType.APPLICATION_JSON).post(Entity.entity(userRequest, MediaType.APPLICATION_JSON));
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
         assertNull(response.readEntity(Object.class));
@@ -182,7 +182,7 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
 
         ErrorResponse errorResponse= response.readEntity(ErrorResponse.class);
         try {
-            new UserName(userRequest.getUserName());
+            Name.validateUserName(userRequest.getUserName());
         } catch(ValidationException error) {
             InvalidRequestException expectedException = new InvalidRequestException(error);
             assertEquals(expectedException.getClass().getSimpleName(), errorResponse.getErrorType());
@@ -204,7 +204,7 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
 
         ErrorResponse errorResponse= response.readEntity(ErrorResponse.class);
         try {
-            new UserDisplayName(userRequest.getUserDisplayName());
+            DisplayName.validateUserDisplayName(userRequest.getUserDisplayName());
         } catch(ValidationException error) {
             InvalidRequestException expectedException = new InvalidRequestException(error);
             assertEquals(expectedException.getClass().getSimpleName(), errorResponse.getErrorType());

@@ -15,14 +15,14 @@ import com.unicorn.rest.repository.exception.DuplicateKeyException;
 import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
+import com.unicorn.rest.repository.model.DisplayName;
 import com.unicorn.rest.repository.model.EmailAddress;
 import com.unicorn.rest.repository.model.MobilePhone;
+import com.unicorn.rest.repository.model.Name;
 import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
-import com.unicorn.rest.repository.model.UserDisplayName;
-import com.unicorn.rest.repository.model.UserName;
-import com.unicorn.rest.repository.table.EmailAddressToUserIdTable;
-import com.unicorn.rest.repository.table.MobilePhoneToUserIdTable;
-import com.unicorn.rest.repository.table.UserNameToUserIdTable;
+import com.unicorn.rest.repository.table.EmailAddressToPrincipalTable;
+import com.unicorn.rest.repository.table.MobilePhoneToPrincipalTable;
+import com.unicorn.rest.repository.table.NameToPrincipalTable;
 import com.unicorn.rest.repository.table.UserProfileTable;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
@@ -31,24 +31,24 @@ public class UserRepositoryImpl implements UserRepository {
     private static final Logger LOG = LogManager.getLogger(UserRepositoryImpl.class);
     
     private UserProfileTable userProfileTable;
-    private UserNameToUserIdTable userNameToUserIdTable;
-    private MobilePhoneToUserIdTable mobilePhoneToUserIdTable;
-    private EmailAddressToUserIdTable emailAddressToUserIdTable;
+    private NameToPrincipalTable nameToPrincipalTable;
+    private MobilePhoneToPrincipalTable mobilePhoneToPrincipalTable;
+    private EmailAddressToPrincipalTable emailAddressToPrincipalTable;
 
     @Inject
-    public UserRepositoryImpl(UserProfileTable userProfileTable, UserNameToUserIdTable userNameToUserIdTable, MobilePhoneToUserIdTable mobilePhoneToUserIdTable, 
-            EmailAddressToUserIdTable emailAddressToUserIdTable) {
+    public UserRepositoryImpl(UserProfileTable userProfileTable, NameToPrincipalTable nameToPrincipalTable, 
+            MobilePhoneToPrincipalTable mobilePhoneToPrincipalTable, EmailAddressToPrincipalTable emailAddressToPrincipalTable) {
         this.userProfileTable = userProfileTable;
-        this.userNameToUserIdTable = userNameToUserIdTable;
-        this.mobilePhoneToUserIdTable = mobilePhoneToUserIdTable;
-        this.emailAddressToUserIdTable = emailAddressToUserIdTable;
+        this.nameToPrincipalTable = nameToPrincipalTable;
+        this.mobilePhoneToPrincipalTable = mobilePhoneToPrincipalTable;
+        this.emailAddressToPrincipalTable = emailAddressToPrincipalTable;
     }
 
     @Override
-    public Long getPrincipalFromLoginName(String loginName) 
+    public Long getPrincipalForLoginName(String loginName) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (StringUtils.isBlank(loginName)) {
-            throw new ValidationException("Expecting non-null request paramter for getUserIdFromLoginName, but received: loginName=null");
+            throw new ValidationException("Expecting non-null request paramter for getPrincipalForLoginName, but received: loginName=null");
         }
         /**
          * TODO: user_name should in future contain at least one letter so that
@@ -56,56 +56,57 @@ public class UserRepositoryImpl implements UserRepository {
          */
         if (loginName.startsWith("+")) {
             MobilePhone mobilePhone = new MobilePhone(loginName, null);
-            return mobilePhoneToUserIdTable.getUserId(mobilePhone);
+            return mobilePhoneToPrincipalTable.getPrincipal(mobilePhone);
         } else if (loginName.contains("@")){
             EmailAddress emailAddress = new EmailAddress(loginName);
-            return emailAddressToUserIdTable.getUserId(emailAddress);
+            return emailAddressToPrincipalTable.getPrincipal(emailAddress);
         } else {
-            UserName userName = new UserName(loginName);
-            return userNameToUserIdTable.getCurrentUserId(userName);
+            Name userName = new Name(loginName);
+            return nameToPrincipalTable.getCurrentPrincipal(userName);
         }
     }
 
     @Override
-    public PrincipalAuthenticationInfo getAuthorizationInfo(Long userId) 
+    public PrincipalAuthenticationInfo getAuthorizationInfoForPrincipal(Long userPrincipal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        return userProfileTable.getUserAuthorizationInfo(userId);
+        return userProfileTable.getUserAuthorizationInfo(userPrincipal);
     }
 
     @Override
-    public Long registerUser(UserName userName, UserDisplayName userDisplayName,
+    public Long registerUser(Name userName, DisplayName userDisplayName,
             String password) throws ValidationException, DuplicateKeyException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
         
-        Long userId = SimpleFlakeKeyGenerator.generateKey();
+        Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
         ByteBuffer salt = AuthenticationSecretUtils.generateRandomSalt();
         ByteBuffer hasedPassword = AuthenticationSecretUtils.generateHashedSecretWithSalt(password, salt);
         
         try {
-            userProfileTable.createUser(userId, userDisplayName, hasedPassword, salt);
+            userProfileTable.createUser(userPrincipal, userDisplayName, hasedPassword, salt);
+            
         } catch(DuplicateKeyException duplicateKeyOnce) {
             /**
-             * Here we try one more time to create user record only if we get back DuplicateKeyException for user_id. 
+             * Here we try one more time to create user record only if we get back DuplicateKeyException for user_principal. 
              * If we still fail after that, throw exception and log an error.
              * 
              * TODO: monitor how often this happens
              */
-            LOG.warn("Failed to create user for user {} with user_id {} due to duplicate user_id already exists.", userName, userId);
-            userId = SimpleFlakeKeyGenerator.generateKey();
+            LOG.warn("Failed to create user for user {} with user_principal {} due to duplicate user_principal already exists.", userName, userPrincipal);
+            userPrincipal = SimpleFlakeKeyGenerator.generateKey();
             try {
-                userProfileTable.createUser(userId, userDisplayName, hasedPassword, salt);
+                userProfileTable.createUser(userPrincipal, userDisplayName, hasedPassword, salt);
             
             } catch(DuplicateKeyException duplicateKeyAgain) {
-                LOG.error("Failed to create user for user {} with user_id {} for the second time due to duplicate user_id already exists.", 
-                        userName, userId);
+                LOG.error("Failed to create user for user {} with user_principal {} for the second time due to duplicate user_principal already exists.", 
+                        userName, userPrincipal);
                 throw new RepositoryServerException(duplicateKeyAgain);
             }
         }
         /**
          * TODO: If the following step failed later for whatever reason, we will
-         * have non-associated user_id record in the USER_PROFILE table. We should 
+         * have non-associated user_principal record in the USER_PROFILE table. We should 
          * add a sweeper to remove those records.
          */
-        userNameToUserIdTable.createUserNameForUserId(userName, userId);
-        return userId;
+        nameToPrincipalTable.createNameForPrincipal(userName, userPrincipal);
+        return userPrincipal;
     }
 }

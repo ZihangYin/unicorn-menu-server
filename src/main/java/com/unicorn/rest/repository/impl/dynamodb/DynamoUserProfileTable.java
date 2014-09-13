@@ -36,53 +36,52 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryClientException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
+import com.unicorn.rest.repository.model.DisplayName;
 import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
-import com.unicorn.rest.repository.model.UserDisplayName;
 import com.unicorn.rest.repository.table.UserProfileTable;
 
 public class DynamoUserProfileTable implements UserProfileTable {
     private static final Logger LOG = LogManager.getLogger(DynamoUserProfileTable.class);
 
-    public static final String USER_PROFILE_TABLE_NAME = "USER_PROFILE_TABLE";
-    public static final String USER_ID_KEY = "USER_ID";
-    public static final String PASSWORD_KEY = "PASSWORD";
-    public static final String SALT_KEY = "SALT";
-    public static final String USER_DISPLAY_NAME_KEY = "USER_DISPLAY_NAME";
+    private static final String USER_PRINCIPAL_KEY = "USER_PRINCIPAL";
+    private static final String PASSWORD_KEY = "PASSWORD";
+    private static final String SALT_KEY = "SALT";
+    private static final String USER_DISPLAY_NAME_KEY = "USER_DISPLAY_NAME";
 
-    public static final String USER_DISPLAY_NAME_GSI_KEY = "USER_DISPLAY_NAME-GSI";
+    private static final String USER_DISPLAY_NAME_GSI_KEY = "USER_DISPLAY_NAME-GSI";
 
     private final DynamoDBDAO awsDynamoDBDAO = DynamoDBDAO.get();
 
     @Override
-    public Long createUser(@Nullable Long userId, @Nullable UserDisplayName userDisplayName, @Nullable ByteBuffer password, @Nullable ByteBuffer salt) 
+    public Long createUser(@Nullable Long userPrincipal, @Nullable DisplayName userDisplayName, @Nullable ByteBuffer password, @Nullable ByteBuffer salt) 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
-        if (userId == null || userDisplayName == null || password == null || salt == null) {
+        if (userPrincipal == null || userDisplayName == null || password == null || salt == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for createUser, but received: userId=%s, password=%s, salt=%s, userDisplayName=%s.=", 
-                            userId, password, salt, userDisplayName));
+                    String.format("Expecting non-null request paramter for createUser, but received: userPrincipal=%s, password=%s, salt=%s, userDisplayName=%s.=", 
+                            userPrincipal, password, salt, userDisplayName));
         }
-        createUserProfile(userId, password, salt, userDisplayName.getUserDisplayName());
-        return userId;
+        createUserProfile(userPrincipal, password, salt, userDisplayName.getDisplayName());
+        return userPrincipal;
     }
 
     @Override
-    public @Nonnull PrincipalAuthenticationInfo getUserAuthorizationInfo(@Nullable Long userId) 
+    public @Nonnull PrincipalAuthenticationInfo getUserAuthorizationInfo(@Nullable Long userPrincipal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        if (userId == null) {
-            throw new ValidationException("Expecting non-null request paramter for createUserNameForUserId, but received: userId=null.=");
+        if (userPrincipal == null) {
+            throw new ValidationException("Expecting non-null request paramter for getUserAuthorizationInfo, but received: userPrincipal=null.=");
         }
 
-        Map<String, AttributeValue> userAttrs = getUserInfo(userId, USER_DISPLAY_NAME_KEY, PASSWORD_KEY, SALT_KEY);
+        Map<String, AttributeValue> userAttrs = getUserInfo(userPrincipal, USER_DISPLAY_NAME_KEY, PASSWORD_KEY, SALT_KEY);
         return PrincipalAuthenticationInfo.buildPrincipalAuthorizationInfo()
-                .principal(userId).password(DynamoAttributeValueUtils.getRequiredByteBufferValue(userAttrs, PASSWORD_KEY))
+                .principal(userPrincipal).password(DynamoAttributeValueUtils.getRequiredByteBufferValue(userAttrs, PASSWORD_KEY))
                 .salt(DynamoAttributeValueUtils.getRequiredByteBufferValue(userAttrs, SALT_KEY))
                 .build();
     }
 
-    private Map<String, AttributeValue> getUserInfo(@Nonnull Long userId, @Nullable String... attributesToGet) 
+    private Map<String, AttributeValue> getUserInfo(@Nonnull Long userPrincipal, @Nullable String... attributesToGet) 
             throws ItemNotFoundException, RepositoryServerException {
         Map<String, AttributeValue> key = new HashMap<>();
-        key.put(USER_ID_KEY, DynamoAttributeValueUtils.numberAttrValue(userId));
+        key.put(USER_PRINCIPAL_KEY, DynamoAttributeValueUtils.numberAttrValue(userPrincipal));
 
         GetItemRequest getItemRequest = new GetItemRequest().withTableName(USER_PROFILE_TABLE_NAME).withKey(key).withAttributesToGet(attributesToGet);
 
@@ -94,29 +93,29 @@ public class DynamoUserProfileTable implements UserProfileTable {
             throw new RepositoryServerException(error);
         }
         if (CollectionUtils.sizeIsEmpty(getItemResult.getItem())) {
-            LOG.info("The user id {} in the getUser request does not exist in the table.", userId);
+            LOG.info("The user id {} in the getUser request does not exist in the table.", userPrincipal);
             throw new ItemNotFoundException();
         }
         return getItemResult.getItem();
     }
 
-    private void createUserProfile(@Nonnull Long userId, @Nonnull ByteBuffer password, @Nonnull ByteBuffer salt, @Nonnull String userDisplayName) 
+    private void createUserProfile(@Nonnull Long userPrincipal, @Nonnull ByteBuffer password, @Nonnull ByteBuffer salt, @Nonnull String userDisplayName) 
             throws DuplicateKeyException, RepositoryServerException {
         Map<String, AttributeValue> item = new HashMap<>();
-        item.put(USER_ID_KEY, DynamoAttributeValueUtils.numberAttrValue(userId));
+        item.put(USER_PRINCIPAL_KEY, DynamoAttributeValueUtils.numberAttrValue(userPrincipal));
         item.put(PASSWORD_KEY, DynamoAttributeValueUtils.byteBufferAttrValue(password));
         item.put(SALT_KEY, DynamoAttributeValueUtils.byteBufferAttrValue(salt));
         item.put(USER_DISPLAY_NAME_KEY, DynamoAttributeValueUtils.stringAttrValue(userDisplayName));
 
         Map<String, ExpectedAttributeValue> expected = new HashMap<>();
-        expected.put(USER_ID_KEY, DynamoAttributeValueUtils.expectEmpty());
+        expected.put(USER_PRINCIPAL_KEY, DynamoAttributeValueUtils.expectEmpty());
 
         PutItemRequest putItemRequest = new PutItemRequest().withTableName(USER_PROFILE_TABLE_NAME).withItem(item).withExpected(expected);
 
         try {
             awsDynamoDBDAO.putItem(putItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.info("The user id {} in createUserProfile request already existed.", userId);
+            LOG.info("The user id {} in createUserProfile request already existed.", userPrincipal);
             throw new DuplicateKeyException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to createUserProfile %s to table %s.", putItemRequest, USER_PROFILE_TABLE_NAME), error);
@@ -127,20 +126,20 @@ public class DynamoUserProfileTable implements UserProfileTable {
     /*
      * This method is protected for unit test
      */
-    protected void deleteUser(@Nonnull Long userId) 
+    protected void deleteUser(@Nonnull Long userPrincipal) 
             throws ItemNotFoundException, RepositoryServerException{
         Map<String, AttributeValue> key = new HashMap<>();
-        key.put(USER_ID_KEY, DynamoAttributeValueUtils.numberAttrValue(userId));
+        key.put(USER_PRINCIPAL_KEY, DynamoAttributeValueUtils.numberAttrValue(userPrincipal));
 
         DeleteItemRequest deleteItemRequest = new DeleteItemRequest().
                 withTableName(USER_PROFILE_TABLE_NAME).withKey(key);
         try {
             awsDynamoDBDAO.deleteItem(deleteItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.info("The user id {} in deleteUser request does not match with one in table.", userId);
+            LOG.info("The user id {} in deleteUser request does not match with one in table.", userPrincipal);
             throw new ItemNotFoundException();
         } catch (AmazonClientException error) {
-            LOG.error( String.format("Failed while attempting to deleteUserNameForUserId %s from table %s.", deleteItemRequest, USER_PROFILE_TABLE_NAME), error);
+            LOG.error( String.format("Failed while attempting to deleteUserNameForUserPrincipal %s from table %s.", deleteItemRequest, USER_PROFILE_TABLE_NAME), error);
             throw new RepositoryServerException(error);
         }
     }
@@ -160,9 +159,9 @@ public class DynamoUserProfileTable implements UserProfileTable {
         .withTableName(USER_PROFILE_TABLE_NAME)
         .withProvisionedThroughput(new ProvisionedThroughput(4L, 1L))
         .withAttributeDefinitions(
-                new AttributeDefinition(USER_ID_KEY, ScalarAttributeType.N),
+                new AttributeDefinition(USER_PRINCIPAL_KEY, ScalarAttributeType.N),
                 new AttributeDefinition(USER_DISPLAY_NAME_KEY, ScalarAttributeType.S))
-                .withKeySchema(new KeySchemaElement(USER_ID_KEY, KeyType.HASH))
+                .withKeySchema(new KeySchemaElement(USER_PRINCIPAL_KEY, KeyType.HASH))
                 .withGlobalSecondaryIndexes(userDisplayNameGSI);
         
         try {

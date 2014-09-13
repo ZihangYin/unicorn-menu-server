@@ -44,13 +44,11 @@ import com.unicorn.rest.utils.TimeUtils;
 public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable {
     private static final Logger LOG = LogManager.getLogger(DynamoAuthenticationTokenTable.class);
 
-    public static final String AUTHENTICATION_TOKEN_TABLE_NAME = "AUTHENTICATION_TOKEN_TABLE";
-    public static final String AUTHENTICATION_TOKEN_TYPE_KEY = "AUTHENTICATION_TOKEN_TYPE"; //HashKey
-    public static final String AUTHENTICATION_TOKEN_KEY = "AUTHENTICATION_TOKEN"; //RangeKey
-    public static final String ISSUED_IN_EPOCH_KEY = "ISSUED_IN_EPOCH";
-    public static final String EXPIRED_IN_EPOCH_KEY = "EXPIRED_IN_EPOCH";
-    public static final String PRINCIPAL_KEY = "PRINCIPAL";
-    public static final String SCOPE_KEY = "SCOPE";
+    private static final String AUTHENTICATION_TOKEN_TYPE_KEY = "AUTHENTICATION_TOKEN_TYPE"; //HashKey
+    private static final String AUTHENTICATION_TOKEN_KEY = "AUTHENTICATION_TOKEN"; //RangeKey
+    private static final String ISSUED_IN_EPOCH_KEY = "ISSUED_IN_EPOCH";
+    private static final String EXPIRED_IN_EPOCH_KEY = "EXPIRED_IN_EPOCH";
+    private static final String PRINCIPAL_KEY = "PRINCIPAL";
 
     private final DynamoDBDAO awsDynamoDBDAO = DynamoDBDAO.get();
 
@@ -219,7 +217,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
             LOG.info("The token {} with token type {} in deleteAuthenticationToken request does not match with one in table.", token, tokenType.name());
             throw new ItemNotFoundException();
         } catch (AmazonClientException error) {
-            LOG.error( String.format("Failed while attempting to deleteUserNameForUserId %s from table %s.", deleteItemRequest, AUTHENTICATION_TOKEN_TABLE_NAME), error);
+            LOG.error( String.format("Failed while attempting to deleteExpiredAuthenticationToken %s from table %s.", deleteItemRequest, AUTHENTICATION_TOKEN_TABLE_NAME), error);
             throw new RepositoryServerException(error);
         }
     }

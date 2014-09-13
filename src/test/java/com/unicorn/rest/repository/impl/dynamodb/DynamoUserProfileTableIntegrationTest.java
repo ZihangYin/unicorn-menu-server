@@ -17,8 +17,8 @@ import com.unicorn.rest.repository.exception.RepositoryClientException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.impl.dynamodb.DynamoUserProfileTable;
+import com.unicorn.rest.repository.model.DisplayName;
 import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
-import com.unicorn.rest.repository.model.UserDisplayName;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
@@ -36,21 +36,21 @@ public class DynamoUserProfileTableIntegrationTest {
     @Test
     public void testCreateUserHappyCase() 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
-        Long userId = SimpleFlakeKeyGenerator.generateKey();
-        UserDisplayName userDisplayName = new UserDisplayName("userDisplayName");
+        Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
+        DisplayName userDisplayName = DisplayName.validateUserDisplayName("userDisplayName");
         ByteBuffer salt = AuthenticationSecretUtils.generateRandomSalt();
         ByteBuffer password = AuthenticationSecretUtils.generateHashedSecretWithSalt("1a2b3c", salt);
 
         try {
-            userProfileTable.createUser(userId, userDisplayName, password, salt);
-            PrincipalAuthenticationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userId);
-            assertEquals(userId, userAuthorizationInfo.getPrincipal());
+            userProfileTable.createUser(userPrincipal, userDisplayName, password, salt);
+            PrincipalAuthenticationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userPrincipal);
+            assertEquals(userPrincipal, userAuthorizationInfo.getPrincipal());
             assertEquals(password, userAuthorizationInfo.getPassword());
             assertEquals(salt, userAuthorizationInfo.getSalt());
 
         } finally {
             try {
-                userProfileTable.deleteUser(userId);
+                userProfileTable.deleteUser(userPrincipal);
             } catch (ItemNotFoundException | RepositoryServerException ignore) {}
         }
     }
@@ -67,31 +67,31 @@ public class DynamoUserProfileTableIntegrationTest {
     }
 
     @Test
-    public void testCreateUserWithExistedUserId() 
+    public void testCreateUserWithExistedUserPrincipal() 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
-        Long userId = SimpleFlakeKeyGenerator.generateKey();
-        UserDisplayName userDisplayName1 = new UserDisplayName("userDisplayNameOne");
-        UserDisplayName userDisplayName2 = new UserDisplayName("userDisplayNameTwo");
+        Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
+        DisplayName userDisplayName1 = DisplayName.validateUserDisplayName("userDisplayNameOne");
+        DisplayName userDisplayName2 = DisplayName.validateUserDisplayName("userDisplayNameTwo");
         ByteBuffer salt1 = AuthenticationSecretUtils.generateRandomSalt();
         ByteBuffer salt2 = AuthenticationSecretUtils.generateRandomSalt();
         ByteBuffer password1 = AuthenticationSecretUtils.generateHashedSecretWithSalt("1a2b3c", salt1);
         ByteBuffer password2 = AuthenticationSecretUtils.generateHashedSecretWithSalt("3c2b1a", salt2);
         try {
-            userProfileTable.createUser(userId, userDisplayName1, password1, salt1);
+            userProfileTable.createUser(userPrincipal, userDisplayName1, password1, salt1);
             try {
-                userProfileTable.createUser(userId, userDisplayName2, password2, salt2);
+                userProfileTable.createUser(userPrincipal, userDisplayName2, password2, salt2);
             } catch(DuplicateKeyException error) {
-                PrincipalAuthenticationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userId);
-                assertEquals(userId, userAuthorizationInfo.getPrincipal());
+                PrincipalAuthenticationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userPrincipal);
+                assertEquals(userPrincipal, userAuthorizationInfo.getPrincipal());
                 assertEquals(password1, userAuthorizationInfo.getPassword());
                 assertEquals(salt1, userAuthorizationInfo.getSalt());
                 return;
             }
-            fail("Failed while running testCreateUserWithExistedUserId");
+            fail("Failed while running testCreateUserWithExistedUserPrincipal");
 
         } finally {
             try {
-                userProfileTable.deleteUser(userId);
+                userProfileTable.deleteUser(userPrincipal);
             } catch (ItemNotFoundException | RepositoryServerException ignore) {}
         }
     }
@@ -114,9 +114,9 @@ public class DynamoUserProfileTableIntegrationTest {
     @Test
     public void testGetUserAuthorizationInfoWithNonExistedUser() 
             throws ValidationException, RepositoryServerException {
-        Long userId = SimpleFlakeKeyGenerator.generateKey();
+        Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
         try {
-            userProfileTable.getUserAuthorizationInfo(userId);
+            userProfileTable.getUserAuthorizationInfo(userPrincipal);
         } catch (ItemNotFoundException error) {
             return;
         } 

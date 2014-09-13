@@ -13,7 +13,7 @@ import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationToken
 public interface AuthenticationTokenRepository {
 
     /**
-     * Find authentication token from token type and token value
+     * Find authentication token
      * 
      * @param tokenType @Nullable
      * @param token @Nullable

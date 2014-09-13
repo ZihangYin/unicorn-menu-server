@@ -19,15 +19,15 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 @NoArgsConstructor
 public class UserRequest {
     
-    public static final String USER_ID = "user_id";
+    public static final String USER_PRINCIPAL = "user_principal";
     public static final String USER_NAME = "user_name";
     public static final String EMAIL_ADDRESS = "email_address";
     public static final String MOBILE_PHONE = "mobile_phone";
     public static final String PASSWORD = "password";
     public static final String USER_DISPLAY_NAME = "user_display_name";
 
-    @JsonProperty(USER_ID)
-    @Getter @Setter private Long userId;
+    @JsonProperty(USER_PRINCIPAL)
+    @Getter @Setter private Long userPrincipal;
     @JsonProperty(USER_NAME)
     @Getter @Setter private String userName;
     @JsonProperty(EMAIL_ADDRESS)
@@ -42,7 +42,7 @@ public class UserRequest {
     
     @Override
     public String toString() {
-        return "UserRequest [userId=" + userId + ", userName=" + userName
+        return "UserRequest [userPrincipal=" + userPrincipal + ", userName=" + userName
                 + ", emailAddress=" + emailAddress + ", mobilePhone="
                 + mobilePhone + ", password=******, userDisplayName="
                 + userDisplayName + "]";
