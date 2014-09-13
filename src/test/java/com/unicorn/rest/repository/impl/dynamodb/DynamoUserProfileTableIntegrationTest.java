@@ -17,7 +17,7 @@ import com.unicorn.rest.repository.exception.RepositoryClientException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.impl.dynamodb.DynamoUserProfileTable;
-import com.unicorn.rest.repository.model.UserAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.repository.model.UserDisplayName;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
@@ -43,8 +43,8 @@ public class DynamoUserProfileTableIntegrationTest {
 
         try {
             userProfileTable.createUser(userId, userDisplayName, password, salt);
-            UserAuthorizationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userId);
-            assertEquals(userId, userAuthorizationInfo.getUserId());
+            PrincipalAuthenticationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userId);
+            assertEquals(userId, userAuthorizationInfo.getPrincipal());
             assertEquals(password, userAuthorizationInfo.getPassword());
             assertEquals(salt, userAuthorizationInfo.getSalt());
 
@@ -81,8 +81,8 @@ public class DynamoUserProfileTableIntegrationTest {
             try {
                 userProfileTable.createUser(userId, userDisplayName2, password2, salt2);
             } catch(DuplicateKeyException error) {
-                UserAuthorizationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userId);
-                assertEquals(userId, userAuthorizationInfo.getUserId());
+                PrincipalAuthenticationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userId);
+                assertEquals(userId, userAuthorizationInfo.getPrincipal());
                 assertEquals(password1, userAuthorizationInfo.getPassword());
                 assertEquals(salt1, userAuthorizationInfo.getSalt());
                 return;

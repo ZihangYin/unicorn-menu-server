@@ -90,8 +90,17 @@ public class DynamoDBDAO implements Closeable {
         }
     }
 
-    public GetItemResult getItem(GetItemRequest getItemRequest) throws AmazonServiceException, AmazonClientException {
-        LOG.debug("Attempting to get item {} from dynamodb.", getItemRequest);
+    public GetItemResult consistentGetItem(GetItemRequest getItemRequest) throws AmazonServiceException, AmazonClientException {
+        LOG.debug("Attempting to consistently get item {} from dynamodb.", getItemRequest);
+        return getItem(getItemRequest.withConsistentRead(true));
+    }
+    
+    public GetItemResult inConsistentGetItem(GetItemRequest getItemRequest) throws AmazonServiceException, AmazonClientException {
+        LOG.debug("Attempting to inconsistently get item {} from dynamodb.", getItemRequest);
+        return getItem(getItemRequest.withConsistentRead(false));
+    }
+    
+    private GetItemResult getItem(GetItemRequest getItemRequest) throws AmazonServiceException, AmazonClientException {
         int numOfAttempts = 1;
         while (true) {
             try {

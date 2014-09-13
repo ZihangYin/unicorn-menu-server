@@ -144,7 +144,7 @@ public class UserRepositoryImplTest {
         Long userId = SimpleFlakeKeyGenerator.generateKey();
 
         mockGetUserIdFromUserNameHappyCase(new UserName(loginName), userId);
-        assertEquals(userId, userRepositoryImpl.getUserIdFromLoginName(loginName));
+        assertEquals(userId, userRepositoryImpl.getPrincipalFromLoginName(loginName));
     }
 
     @Test
@@ -154,7 +154,7 @@ public class UserRepositoryImplTest {
         Long userId = SimpleFlakeKeyGenerator.generateKey();
 
         mockGetUserIdFromMobilePhoneHappyCase(new MobilePhone(loginName, null), userId);
-        assertEquals(userId, userRepositoryImpl.getUserIdFromLoginName(loginName));
+        assertEquals(userId, userRepositoryImpl.getPrincipalFromLoginName(loginName));
     }
 
     @Test
@@ -164,7 +164,7 @@ public class UserRepositoryImplTest {
         Long userId = SimpleFlakeKeyGenerator.generateKey();
 
         mockGetUserIdFromEmailAddressHappyCase(new EmailAddress(loginName), userId);
-        assertEquals(userId, userRepositoryImpl.getUserIdFromLoginName(loginName));
+        assertEquals(userId, userRepositoryImpl.getPrincipalFromLoginName(loginName));
     }
     
     @Test
@@ -176,7 +176,7 @@ public class UserRepositoryImplTest {
         
         mockCreateUserInUserProfileHappyCase();
         mockCreateUserNameToIDHappyCase();
-        userRepositoryImpl.createUser(userName, userDisplayName, password);
+        userRepositoryImpl.registerUser(userName, userDisplayName, password);
     }
     
     @Test
@@ -188,7 +188,7 @@ public class UserRepositoryImplTest {
         
         mockCreateUserInUserProfileDuplicateUserIdOnce();
         mockCreateUserNameToIDHappyCase();
-        userRepositoryImpl.createUser(userName, userDisplayName, password);
+        userRepositoryImpl.registerUser(userName, userDisplayName, password);
     }
 
     /*
@@ -200,7 +200,7 @@ public class UserRepositoryImplTest {
         String loginName = "user_name";
         mockGetUserIdFromUserNameNoUserName(new UserName(loginName));
         try {
-            userRepositoryImpl.getUserIdFromLoginName(loginName);
+            userRepositoryImpl.getPrincipalFromLoginName(loginName);
         } catch (ItemNotFoundException error) {
             return;
         }
@@ -213,7 +213,7 @@ public class UserRepositoryImplTest {
         String loginName = "+19191234567";
         mockGetUserIdFromMobilePhoneNoMobilePhone(new MobilePhone(loginName, null));
         try {
-            userRepositoryImpl.getUserIdFromLoginName(loginName);
+            userRepositoryImpl.getPrincipalFromLoginName(loginName);
         } catch (ItemNotFoundException error) {
             return;
         }
@@ -226,7 +226,7 @@ public class UserRepositoryImplTest {
         String loginName = "test@test.com";
         mockGetUserIdFromEmailAddressNoEmailAddress(new EmailAddress(loginName));
         try {
-            userRepositoryImpl.getUserIdFromLoginName(loginName);
+            userRepositoryImpl.getPrincipalFromLoginName(loginName);
         } catch (ItemNotFoundException error) {
             return;
         }
@@ -243,7 +243,7 @@ public class UserRepositoryImplTest {
         mockCreateUserInUserProfileDuplicateUserIdOnce();
         mockCreateUserNameToIDDuplicateUserUserName();
         try {
-            userRepositoryImpl.createUser(userName, userDisplayName, password);
+            userRepositoryImpl.registerUser(userName, userDisplayName, password);
         }catch (DuplicateKeyException error) {
             return;
         }
@@ -262,7 +262,7 @@ public class UserRepositoryImplTest {
         
         mockCreateUserInUserProfileDuplicateUserId();
         try {
-            userRepositoryImpl.createUser(userName, userDisplayName, password);
+            userRepositoryImpl.registerUser(userName, userDisplayName, password);
         } catch (RepositoryServerException error) {
             assertEquals(DuplicateKeyException.class, error.getCause().getClass());
             return;
@@ -279,7 +279,7 @@ public class UserRepositoryImplTest {
         
         mockCreateUserInUserProfileServerError();
         try {
-            userRepositoryImpl.createUser(userName, userDisplayName, password);
+            userRepositoryImpl.registerUser(userName, userDisplayName, password);
         } catch (RepositoryServerException error) {
             return;
         }
@@ -296,7 +296,7 @@ public class UserRepositoryImplTest {
         mockCreateUserInUserProfileHappyCase();
         mockCreateUserNameToIDServerError();
         try {
-            userRepositoryImpl.createUser(userName, userDisplayName, password);
+            userRepositoryImpl.registerUser(userName, userDisplayName, password);
         } catch (RepositoryServerException error) {
             return;
         }

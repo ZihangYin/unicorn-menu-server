@@ -17,12 +17,13 @@ public interface AuthenticationTokenRepository {
      * 
      * @param tokenType @Nullable
      * @param token @Nullable
+     * @param principal @Nullable
      * @return
      * @throws ValidationException if request is invalid
      * @throws ItemNotFoundException if authentication token attempted to find does not exist
      * @throws RepositoryServerException internal server error
      */
-    public @Nonnull AuthenticationToken findToken(@Nullable AuthenticationTokenType tokenType, @Nullable String token) 
+    public @Nonnull AuthenticationToken findToken(@Nullable AuthenticationTokenType tokenType, @Nullable String token, @Nullable Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
     
     /**
@@ -41,10 +42,11 @@ public interface AuthenticationTokenRepository {
      * 
      * @param tokenType @Nullable
      * @param token @Nullable
+     * @param principal @Nullable
      * @throws ValidationException if request is invalid
      * @throws ItemNotFoundException if authentication token attempted to revoke does not exist
      * @throws RepositoryServerException internal server error
      */
-    public void revokeToken(@Nullable AuthenticationTokenType tokenType, @Nullable String token) 
+    public void revokeToken(@Nullable AuthenticationTokenType tokenType, @Nullable String token, @Nullable Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
 }

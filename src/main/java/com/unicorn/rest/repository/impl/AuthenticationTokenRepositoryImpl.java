@@ -1,6 +1,5 @@
 package com.unicorn.rest.repository.impl;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import com.unicorn.rest.repository.AuthenticationTokenRepository;
@@ -22,9 +21,9 @@ public class AuthenticationTokenRepositoryImpl implements AuthenticationTokenRep
     }
     
     @Override
-    public AuthenticationToken findToken(AuthenticationTokenType tokenType, @Nullable String token) 
+    public AuthenticationToken findToken(AuthenticationTokenType tokenType, String token, Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        return authenticationTokenTable.getToken(tokenType, token);
+        return authenticationTokenTable.getTokenForPrincipal(tokenType, token, principal);
     }
 
     @Override
@@ -34,9 +33,9 @@ public class AuthenticationTokenRepositoryImpl implements AuthenticationTokenRep
     }
 
     @Override
-    public void revokeToken(AuthenticationTokenType tokenType, String token) 
+    public void revokeToken(AuthenticationTokenType tokenType, String token, Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        authenticationTokenTable.revokeToken(tokenType, token);
+        authenticationTokenTable.revokeTokenForPrincipal(tokenType, token, principal);
     }
 
 }

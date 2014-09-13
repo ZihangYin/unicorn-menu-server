@@ -10,7 +10,7 @@ import com.unicorn.rest.repository.exception.DuplicateKeyException;
 import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
-import com.unicorn.rest.repository.model.UserAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.repository.model.UserDisplayName;
 
 @Singleton
@@ -39,6 +39,6 @@ public interface UserProfileTable extends Table {
      * @throws ItemNotFoundException if user_id does not exist
      * @throws RepositoryServerException internal server error
      */
-    public @Nonnull UserAuthorizationInfo getUserAuthorizationInfo(@Nullable Long userId) 
+    public @Nonnull PrincipalAuthenticationInfo getUserAuthorizationInfo(@Nullable Long userId) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
 }

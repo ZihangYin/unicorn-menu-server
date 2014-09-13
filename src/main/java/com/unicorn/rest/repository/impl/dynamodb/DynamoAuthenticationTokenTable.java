@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -50,13 +49,8 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
     public static final String AUTHENTICATION_TOKEN_KEY = "AUTHENTICATION_TOKEN"; //RangeKey
     public static final String ISSUED_IN_EPOCH_KEY = "ISSUED_IN_EPOCH";
     public static final String EXPIRED_IN_EPOCH_KEY = "EXPIRED_IN_EPOCH";
-    public static final String USER_ID_KEY = "USER_ID";
-    public static final String CLIENT_ID_KEY = "CLIENT_ID";
-    public static final String CLIENT_SECRET_PROOF_KEY = "CLIENT_SECRET_PROOF";
+    public static final String PRINCIPAL_KEY = "PRINCIPAL";
     public static final String SCOPE_KEY = "SCOPE";
-    public static final String REDIRECT_URI_KEY = "REDIRECT_URI";
-    public static final String STATE_KEY = "STATE";
-    public static final String REFRESH_TOKEN_KEY = "REFRESH_TOKEN";
 
     private final DynamoDBDAO awsDynamoDBDAO = DynamoDBDAO.get();
 
@@ -70,14 +64,14 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
     }
 
     @Override
-    public void revokeToken(AuthenticationTokenType tokenType, @Nullable String token) 
+    public void revokeTokenForPrincipal(AuthenticationTokenType tokenType, String token, Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        if (tokenType == null || token == null) {
+        if (tokenType == null || token == null || principal == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for revokeToken, but received: authenticationToken=%s, authenticationToken=%s", 
-                            tokenType, token));
+                    String.format("Expecting non-null request paramter for revokeToken, but received: authenticationToken=%s, authenticationToken=%s, principal=%s", 
+                            tokenType, token, principal));
         }
-        revokeAuthenticationToken(tokenType, token);
+        revokeAuthenticationToken(tokenType, token, principal);
     }
 
     @Override
@@ -92,10 +86,32 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
         return AuthenticationToken.buildTokenBuilder(token).tokenType(tokenType)
                 .issuedAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, ISSUED_IN_EPOCH_KEY)))
                 .expiredAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, EXPIRED_IN_EPOCH_KEY)))
-                .userId(DynamoAttributeValueUtils.getLongValue(tokenAttrs, USER_ID_KEY))
+                .principal(DynamoAttributeValueUtils.getLongValue(tokenAttrs, PRINCIPAL_KEY))
                 .build();
     }
-    
+
+    @Override
+    public AuthenticationToken getTokenForPrincipal(AuthenticationTokenType tokenType, String token, Long principal) 
+            throws ValidationException, ItemNotFoundException, RepositoryServerException {
+        if (tokenType == null || token == null || principal == null) {
+            throw new ValidationException(
+                    String.format("Expecting non-null request paramter for getToken, but received: authenticationToken=%s, authenticationToken=%s, principal=%s", 
+                            tokenType, token, principal));
+        }
+        Map<String, AttributeValue> tokenAttrs = getAuthenticationToken(tokenType, token);
+
+        if (!principal.equals(DynamoAttributeValueUtils.getLongValue(tokenAttrs, PRINCIPAL_KEY))) {
+            LOG.info("The token {} with token type {} for principal {} in getTokenForPrincipal request does not exist in the table.", token, tokenType.name(), principal);
+            throw new ItemNotFoundException();
+        }
+        
+        return AuthenticationToken.buildTokenBuilder(token).tokenType(tokenType)
+                .issuedAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, ISSUED_IN_EPOCH_KEY)))
+                .expiredAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, EXPIRED_IN_EPOCH_KEY)))
+                .principal(principal)
+                .build();
+    }
+
     @Override
     public void deleteExpiredToken(AuthenticationTokenType tokenType, String token) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
@@ -114,10 +130,9 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
         key.put(AUTHENTICATION_TOKEN_KEY, DynamoAttributeValueUtils.stringAttrValue(token));
 
         GetItemRequest getItemRequest = new GetItemRequest().withTableName(AUTHENTICATION_TOKEN_TABLE_NAME).withKey(key);
-
         GetItemResult getItemResult;
         try {
-            getItemResult = awsDynamoDBDAO.getItem(getItemRequest);
+            getItemResult = awsDynamoDBDAO.consistentGetItem(getItemRequest);
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to getAuthenticationToken %s from table %s.", getItemRequest, AUTHENTICATION_TOKEN_TABLE_NAME), error);
             throw new RepositoryServerException(error);
@@ -137,7 +152,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
         item.put(AUTHENTICATION_TOKEN_KEY, DynamoAttributeValueUtils.stringAttrValue(authenticationToken.getToken()));
         item.put(ISSUED_IN_EPOCH_KEY, DynamoAttributeValueUtils.numberAttrValue(authenticationToken.getIssuedAt().getMillis()));
         item.put(EXPIRED_IN_EPOCH_KEY, DynamoAttributeValueUtils.numberAttrValue(authenticationToken.getExpireAt().getMillis()));
-        item.put(USER_ID_KEY, DynamoAttributeValueUtils.numberAttrValue(authenticationToken.getUserId()));
+        item.put(PRINCIPAL_KEY, DynamoAttributeValueUtils.numberAttrValue(authenticationToken.getPrincipal()));
 
         Map<String, ExpectedAttributeValue> expected = new HashMap<>();
         expected.put(AUTHENTICATION_TOKEN_TYPE_KEY, DynamoAttributeValueUtils.expectEmpty());
@@ -157,7 +172,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
         }
     }
 
-    private void revokeAuthenticationToken(@Nonnull AuthenticationTokenType tokenType, @Nonnull String token) 
+    private void revokeAuthenticationToken(@Nonnull AuthenticationTokenType tokenType, @Nonnull String token, @Nonnull Long principal) 
             throws ItemNotFoundException, RepositoryServerException {
         HashMap<String, AttributeValue> key = new HashMap<>();
         key.put(AUTHENTICATION_TOKEN_TYPE_KEY, DynamoAttributeValueUtils.stringAttrValue(tokenType.name()));
@@ -168,15 +183,17 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
         updateItems.put(EXPIRED_IN_EPOCH_KEY, DynamoAttributeValueUtils.updateTo(now));
 
         Map<String, ExpectedAttributeValue> expectedValues = new HashMap<>();
+        AttributeValue principalAttrValue = DynamoAttributeValueUtils.numberAttrValue(principal);
+        expectedValues.put(PRINCIPAL_KEY, DynamoAttributeValueUtils.expectEqual(principalAttrValue));
         expectedValues.put(EXPIRED_IN_EPOCH_KEY, DynamoAttributeValueUtils.expectCompare(ComparisonOperator.GT, now));
-
+        
         UpdateItemRequest updateItemRequest = new UpdateItemRequest().withTableName(AUTHENTICATION_TOKEN_TABLE_NAME)
-                .withKey(key).withExpected(expectedValues).withAttributeUpdates(updateItems);
+                .withKey(key).withAttributeUpdates(updateItems).withExpected(expectedValues);
 
         try {
             awsDynamoDBDAO.updateItem(updateItemRequest);
         } catch (ConditionalCheckFailedException error) {
-            LOG.info("The token {} with token type {} in revokeAuthenticationToken request does not exist in the table.", token, tokenType.name());
+            LOG.info("The token {} with token type {} in revokeAuthenticationToken request does not exist or already expired in the table.", token, tokenType.name());
             throw new ItemNotFoundException();
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to revokeAuthenticationToken %s to table %s.", updateItemRequest, AUTHENTICATION_TOKEN_TABLE_NAME), error);
@@ -193,7 +210,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
         Map<String, ExpectedAttributeValue> expectedValues = new HashMap<>();
         expectedValues.put(EXPIRED_IN_EPOCH_KEY, DynamoAttributeValueUtils.expectCompare(ComparisonOperator.LT, 
                 DynamoAttributeValueUtils.numberAttrValue(TimeUtils.getEpochTimeNowInUTC())));
-        
+
         DeleteItemRequest deleteItemRequest = new DeleteItemRequest().
                 withTableName(AUTHENTICATION_TOKEN_TABLE_NAME).withKey(key);
         try {
@@ -206,7 +223,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
             throw new RepositoryServerException(error);
         }
     }
-    
+
     public void createTable() 
             throws RepositoryClientException, RepositoryServerException {
         CreateTableRequest createTableRequest = new CreateTableRequest()
@@ -224,7 +241,7 @@ public class DynamoAuthenticationTokenTable implements AuthenticationTokenTable 
         } catch (AmazonClientException error) {
             throw new RepositoryServerException(error);
         }
-        
+
     }
 
     public void deleteTable() 

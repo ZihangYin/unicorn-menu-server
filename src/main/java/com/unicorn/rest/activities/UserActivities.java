@@ -42,7 +42,7 @@ public class UserActivities {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createNewUser(UserRequest userRequest) 
+    public Response register(UserRequest userRequest) 
             throws BadRequestException, InternalServerErrorException {
         try {
             if (userRequest == null) {
@@ -56,7 +56,7 @@ public class UserActivities {
                 throw new WeakPasswordException();
             }
             try{    
-                userRepository.createUser(userName, userDisplayName, password);
+                userRepository.registerUser(userName, userDisplayName, password);
                 return Response.status(Status.OK).build();
             } catch (DuplicateKeyException error) {
                 throw new ResourceInUseException();
@@ -73,5 +73,4 @@ public class UserActivities {
             throw new InternalServerErrorException(internalFailure);
         }
     }
-
 }

@@ -121,7 +121,7 @@ public class DynamoMobilePhoneToUserIdTable implements MobilePhoneToUserIdTable 
 
         GetItemResult getItemResult;
         try {
-            getItemResult = awsDynamoDBDAO.getItem(getItemRequest);
+            getItemResult = awsDynamoDBDAO.consistentGetItem(getItemRequest);
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to getUserIdForMobilePhone %s from table %s.", getItemRequest, MOBILE_PHONE_TO_ID_TABLE_NAME), error);
             throw new RepositoryServerException(error);

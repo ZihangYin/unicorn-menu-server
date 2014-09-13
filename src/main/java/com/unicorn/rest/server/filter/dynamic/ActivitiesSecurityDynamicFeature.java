@@ -21,7 +21,7 @@ public class ActivitiesSecurityDynamicFeature implements DynamicFeature {
          * If the request is to generate/revoke token, or create new user, do not register the security filter
          */
         if (TokenActivities.class.equals(resourceClass) || 
-                (UserActivities.class.equals(resourceClass) && resourceMethod.equals("createNewUser"))) {
+                (UserActivities.class.equals(resourceClass) && resourceMethod.equals("register"))) {
             return;
         }
         context.register(ActivitiesSecurityFilter.class);

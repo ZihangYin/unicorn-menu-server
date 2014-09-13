@@ -117,7 +117,7 @@ public class DynamoEmailAddressToUserIdTable implements EmailAddressToUserIdTabl
 
         GetItemResult getItemResult;
         try {
-            getItemResult = awsDynamoDBDAO.getItem(getItemRequest);
+            getItemResult = awsDynamoDBDAO.consistentGetItem(getItemRequest);
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to getUserIdForEmailAddress %s from table %s.", getItemRequest, EMAIL_ADDRESS_TO_ID_TABLE_NAME), error);
             throw new RepositoryServerException(error);

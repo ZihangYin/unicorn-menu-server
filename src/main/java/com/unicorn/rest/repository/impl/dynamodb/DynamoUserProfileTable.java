@@ -36,7 +36,7 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryClientException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
-import com.unicorn.rest.repository.model.UserAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.repository.model.UserDisplayName;
 import com.unicorn.rest.repository.table.UserProfileTable;
 
@@ -66,30 +66,29 @@ public class DynamoUserProfileTable implements UserProfileTable {
     }
 
     @Override
-    public @Nonnull UserAuthorizationInfo getUserAuthorizationInfo(@Nullable Long userId) 
+    public @Nonnull PrincipalAuthenticationInfo getUserAuthorizationInfo(@Nullable Long userId) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (userId == null) {
             throw new ValidationException("Expecting non-null request paramter for createUserNameForUserId, but received: userId=null.=");
         }
 
-        Map<String, AttributeValue> userAttrs = getUserInfo(userId, true, USER_DISPLAY_NAME_KEY, PASSWORD_KEY, SALT_KEY);
-        return UserAuthorizationInfo.buildUserAuthorizationInfo()
-                .userId(userId).password(DynamoAttributeValueUtils.getRequiredByteBufferValue(userAttrs, PASSWORD_KEY))
+        Map<String, AttributeValue> userAttrs = getUserInfo(userId, USER_DISPLAY_NAME_KEY, PASSWORD_KEY, SALT_KEY);
+        return PrincipalAuthenticationInfo.buildPrincipalAuthorizationInfo()
+                .principal(userId).password(DynamoAttributeValueUtils.getRequiredByteBufferValue(userAttrs, PASSWORD_KEY))
                 .salt(DynamoAttributeValueUtils.getRequiredByteBufferValue(userAttrs, SALT_KEY))
                 .build();
     }
 
-    private Map<String, AttributeValue> getUserInfo(@Nonnull Long userId, boolean consistentRead, @Nullable String... attributesToGet) 
+    private Map<String, AttributeValue> getUserInfo(@Nonnull Long userId, @Nullable String... attributesToGet) 
             throws ItemNotFoundException, RepositoryServerException {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put(USER_ID_KEY, DynamoAttributeValueUtils.numberAttrValue(userId));
 
-        GetItemRequest getItemRequest = new GetItemRequest().withConsistentRead(consistentRead)
-                .withTableName(USER_PROFILE_TABLE_NAME).withKey(key).withAttributesToGet(attributesToGet);
+        GetItemRequest getItemRequest = new GetItemRequest().withTableName(USER_PROFILE_TABLE_NAME).withKey(key).withAttributesToGet(attributesToGet);
 
         GetItemResult getItemResult;
         try {
-            getItemResult = awsDynamoDBDAO.getItem(getItemRequest);
+            getItemResult = awsDynamoDBDAO.consistentGetItem(getItemRequest);
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to getUser %s from table %s.", getItemRequest, USER_PROFILE_TABLE_NAME), error);
             throw new RepositoryServerException(error);

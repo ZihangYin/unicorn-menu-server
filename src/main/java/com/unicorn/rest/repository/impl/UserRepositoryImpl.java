@@ -17,7 +17,7 @@ import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.EmailAddress;
 import com.unicorn.rest.repository.model.MobilePhone;
-import com.unicorn.rest.repository.model.UserAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.repository.model.UserDisplayName;
 import com.unicorn.rest.repository.model.UserName;
 import com.unicorn.rest.repository.table.EmailAddressToUserIdTable;
@@ -45,7 +45,7 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public Long getUserIdFromLoginName(String loginName) 
+    public Long getPrincipalFromLoginName(String loginName) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (StringUtils.isBlank(loginName)) {
             throw new ValidationException("Expecting non-null request paramter for getUserIdFromLoginName, but received: loginName=null");
@@ -67,13 +67,13 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public UserAuthorizationInfo getUserAuthorizationInfo(Long userId) 
+    public PrincipalAuthenticationInfo getAuthorizationInfo(Long userId) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         return userProfileTable.getUserAuthorizationInfo(userId);
     }
 
     @Override
-    public Long createUser(UserName userName, UserDisplayName userDisplayName,
+    public Long registerUser(UserName userName, UserDisplayName userDisplayName,
             String password) throws ValidationException, DuplicateKeyException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
         
         Long userId = SimpleFlakeKeyGenerator.generateKey();

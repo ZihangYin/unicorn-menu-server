@@ -6,6 +6,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -14,34 +15,34 @@ import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationTokenType;
 
 @EqualsAndHashCode
+@ToString
 public class RevokeTokenRequest {
 
     public static final String TOKEN_TYPE = "token_type";
     public static final String TOKEN = "token";
+    public static final String PRINCIPAL = "principal";
  
     @Getter @Nonnull private final AuthenticationTokenType tokenType;
     @Getter @Nonnull private final String token;
+    @Getter @Nonnull private final Long principal;
 
     public static RevokeTokenRequest validateRevokeTokenRequest(@Nullable MultivaluedMap<String, String> multiValuedParameters) 
             throws ValidationException {
         if (CollectionUtils.sizeIsEmpty(multiValuedParameters)) {
             throw new ValidationException("Expecting non-null request paramter for validateRevokeTokenRequest, but received: multiValuedParameters=null");
         }
-        return new RevokeTokenRequest(multiValuedParameters.getFirst(TOKEN_TYPE), multiValuedParameters.getFirst(TOKEN));
+        return new RevokeTokenRequest(multiValuedParameters.getFirst(TOKEN_TYPE), multiValuedParameters.getFirst(TOKEN), multiValuedParameters.getFirst(PRINCIPAL));
     }
 
-    private RevokeTokenRequest(@Nullable String tokenType, @Nullable String token) 
+    private RevokeTokenRequest(@Nullable String tokenType, @Nullable String token, @Nullable String principalStr) 
             throws ValidationException {
         
         this.tokenType = AuthenticationTokenType.fromString(tokenType);
         this.token = RequestValidator.validateRequiredParameter(TOKEN, token);
-    }
-    
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder("RevokeTokenRequest [tokenType=").append(tokenType);
-        builder.append(", token=").append(token);
-        builder.append("]");
-        return builder.toString();
+        try {
+            this.principal = Long.parseLong(principalStr);
+        } catch (NumberFormatException error) {
+            throw new ValidationException(String.format("The principal %s is missing or malformed", principalStr));
+        }
     }
 }

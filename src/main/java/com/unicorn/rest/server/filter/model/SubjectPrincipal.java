@@ -6,7 +6,7 @@ public interface SubjectPrincipal extends Principal {
     /**
      * Get this SubjectPrincipal's application-wide uniquely identifying principal.
      */
-    public Object getPrincipal();    
+    public Long getPrincipal();    
     
     public AuthenticationScheme getAuthenticationScheme();
 }

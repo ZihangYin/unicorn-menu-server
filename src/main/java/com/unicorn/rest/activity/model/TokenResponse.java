@@ -25,6 +25,7 @@ public class TokenResponse {
     private static final String TOKEN_TYPE = "token_type";
     private static final String ACCESS_TOKEN = "access_token";
     private static final String EXPIRES_AT = "expire_at";
+    private static final String PRINCIPAL = "principal";
 
     @JsonProperty(TOKEN_TYPE)
     @Getter @Setter private String tokenType;
@@ -33,17 +34,21 @@ public class TokenResponse {
     @JsonProperty(EXPIRES_AT)
     @JsonInclude(value=Include.NON_DEFAULT)
     @Getter @Setter private Date expireAt;
+    @JsonProperty(PRINCIPAL)
+    @Getter @Setter private Long principal;
 
     public TokenResponse(@Nonnull AuthenticationToken authenticationToken) {
         this.tokenType = authenticationToken.getTokenType().toString();
         this.accessToken = authenticationToken.getToken();
         this.expireAt = authenticationToken.getExpireAt().toDate();
+        this.principal = authenticationToken.getPrincipal();
     }
 
     @Override
     public String toString() {
         return "TokenResponse [tokenType=" + tokenType + ", accessToken="
-                + accessToken + ", expireAt=" + expireAt + "]";
+                + accessToken + ", expireAt=" + expireAt 
+                + ", principal=" + principal + "]";
     }
 
 }

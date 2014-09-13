@@ -26,15 +26,16 @@ public interface AuthenticationTokenTable extends Table {
             throws ValidationException, DuplicateKeyException, RepositoryServerException;
     
     /**
-     * Revoke authentication token  
+     * Revoke authentication token for principal
      * 
      * @param tokenType @Nullable
      * @param token @Nullable
+     * @param principal @Nullable
      * @throws ValidationException if request is invalid
      * @throws ItemNotFoundException if authentication token attempted to revoke does not exist
      * @throws RepositoryServerException internal server error
      */
-    public void revokeToken(@Nullable AuthenticationTokenType tokenType, @Nullable String token) 
+    public void revokeTokenForPrincipal(@Nullable AuthenticationTokenType tokenType, @Nullable String token, @Nullable Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
     
     /**
@@ -48,6 +49,20 @@ public interface AuthenticationTokenTable extends Table {
      * @throws RepositoryServerException internal server error
      */
     public @Nonnull AuthenticationToken getToken(@Nullable AuthenticationTokenType tokenType, @Nullable String token) 
+            throws ValidationException, ItemNotFoundException, RepositoryServerException;
+    
+    /**
+     * Get authentication token for principal by looking up token type and token value
+     * 
+     * @param tokenType @Nullable
+     * @param token @Nullable
+     * @param principal @Nullable
+     * @return
+     * @throws ValidationException if request is invalid
+     * @throws ItemNotFoundException if authentication token attempted to get does not exist
+     * @throws RepositoryServerException internal server error
+     */
+    public @Nonnull AuthenticationToken getTokenForPrincipal(@Nullable AuthenticationTokenType tokenType, @Nullable String token, @Nullable Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
     
     /**

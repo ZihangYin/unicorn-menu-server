@@ -58,7 +58,7 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
     private void mockCreateNewUserHappyCase(UserRequest userRequest, Long expectedUserId) 
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
-        Mockito.doReturn(expectedUserId).when(mockedUserRepository).createUser(
+        Mockito.doReturn(expectedUserId).when(mockedUserRepository).registerUser(
                 new UserName(userRequest.getUserName()), new UserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
     }
     
@@ -66,7 +66,7 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
         DuplicateKeyException duplicateKey = new DuplicateKeyException();
-        Mockito.doThrow(duplicateKey).when(mockedUserRepository).createUser(
+        Mockito.doThrow(duplicateKey).when(mockedUserRepository).registerUser(
                 new UserName(userRequest.getUserName()), new UserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
     }
     
@@ -74,7 +74,7 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
         RepositoryServerException internalError = new RepositoryServerException("Internal Server Error", null);
-        Mockito.doThrow(internalError).when(mockedUserRepository).createUser(
+        Mockito.doThrow(internalError).when(mockedUserRepository).registerUser(
                 new UserName(userRequest.getUserName()), new UserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
     }
     

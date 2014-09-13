@@ -21,9 +21,14 @@ public class GenerateTokenRequest {
     public static final String GRANT_TYPE = "grant_type";    
     public static final String LOGIN_NAME = "login_name";
     public static final String PASSWORD = "password";
-
+    public static final String CREDENTIAL = "credential";
+    
     public enum GrantType {
-        PASSWORD("password");
+        /**
+         * user_password is used by end users and customer_credential is used by business customers
+         */
+        USER_PASSWORD("user_password"),
+        CUSTOMER_CREDENTIAL("customer_credential");
 
         private String grantType;
 
@@ -39,7 +44,8 @@ public class GenerateTokenRequest {
 
     @Getter @Nonnull private final GrantType grantType;
     @Getter @Nonnull private final String loginName;
-    @Getter @Nonnull private final String password;
+    private String password;
+    private String credential;
 
     public static GenerateTokenRequest validateGenerateTokenRequest(@Nullable MultivaluedMap<String, String> multiValuedParameters) 
             throws ValidationException {
@@ -48,29 +54,45 @@ public class GenerateTokenRequest {
         }
 
         return new GenerateTokenRequest(multiValuedParameters.getFirst(GRANT_TYPE), 
-                multiValuedParameters.getFirst(LOGIN_NAME), multiValuedParameters.getFirst(PASSWORD));
+                multiValuedParameters.getFirst(LOGIN_NAME), multiValuedParameters.getFirst(PASSWORD), 
+                multiValuedParameters.getFirst(CREDENTIAL));
     }
 
-    private GenerateTokenRequest(String grantType, String loginName, String password) 
+    private GenerateTokenRequest(String grantType, String loginName, String password, String credential) 
             throws ValidationException {
 
-        if (PASSWORD.toString().equals(grantType)) {
-            this.grantType = GrantType.PASSWORD;
+        this.loginName = RequestValidator.validateRequiredParameter(LOGIN_NAME, loginName);
+        if (GrantType.USER_PASSWORD.toString().equals(grantType)) {
+            this.grantType = GrantType.USER_PASSWORD;
+            this.password = RequestValidator.validateRequiredParameter(PASSWORD, password);
+        } else if (GrantType.CUSTOMER_CREDENTIAL.toString().equals(grantType)) {
+            this.credential = RequestValidator.validateRequiredParameter(CREDENTIAL, password);
+            this.grantType = GrantType.CUSTOMER_CREDENTIAL;
+            
         } else {
             RequestValidator.validateRequiredParameter(GRANT_TYPE, grantType); 
             throw new BadTokenRequestException(TokenErrCode.UNSUPPORTED_GRANT_TYPE,  
                     String.format(TokenErrDescFormatter.UNSUPPORTED_GRANT_TYPE.toString(), grantType));
         }
-
-        this.loginName = RequestValidator.validateRequiredParameter(LOGIN_NAME, loginName);
-        this.password = RequestValidator.validateRequiredParameter(PASSWORD, password);
+    }
+    
+    /**
+     * @return password @Nonnull if this is a required parameter for this grant type
+     */
+    public String getPassword() {
+        return password;
+    }
+    /**
+     * @return credential @Nonnull if this is a required parameter for this grant type
+     */
+    public String getCredential() {
+        return credential;
     }
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("GenerateTokenRequest [grantType=").append(grantType);
-        builder.append(", loginName=").append(loginName);
-        builder.append(", password=******]");
-        return builder.toString();
+        return "GenerateTokenRequest [grantType=" + grantType + ", loginName="
+                + loginName + "]";
     }
+    
 }

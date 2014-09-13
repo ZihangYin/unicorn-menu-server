@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -28,6 +29,7 @@ import com.unicorn.rest.activity.model.RevokeTokenRequest;
 import com.unicorn.rest.activity.model.GenerateTokenRequest;
 import com.unicorn.rest.activity.model.TokenResponse;
 import com.unicorn.rest.activity.model.GenerateTokenRequest.GrantType;
+import com.unicorn.rest.repository.AuthenticationRepository;
 import com.unicorn.rest.repository.AuthenticationTokenRepository;
 import com.unicorn.rest.repository.UserRepository;
 import com.unicorn.rest.repository.exception.DuplicateKeyException;
@@ -35,7 +37,7 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.AuthenticationToken;
-import com.unicorn.rest.repository.model.UserAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationTokenType;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 
@@ -50,7 +52,8 @@ public class TokenActivities {
     private UserRepository userRepository;
 
     @Inject
-    public TokenActivities(AuthenticationTokenRepository tokenRepository, UserRepository userRepository) {
+    public TokenActivities(AuthenticationTokenRepository tokenRepository, 
+            UserRepository userRepository) {
         this.tokenRepository = tokenRepository;
         this.userRepository = userRepository;
     }
@@ -61,39 +64,22 @@ public class TokenActivities {
             throws BadRequestException, InternalServerErrorException {
         try {
             GenerateTokenRequest tokenRequest = GenerateTokenRequest.validateGenerateTokenRequest(uriInfo.getQueryParameters());
-
-            GrantType grantType = tokenRequest.getGrantType();        
+           
+            GrantType grantType = tokenRequest.getGrantType();
+            AuthenticationToken accessToken = null;
             switch (grantType) {
-            case PASSWORD:
-                AuthenticationToken accessToken = generateTokenForPasswordGrant(tokenRequest);
-               
-                try {
-                    tokenRepository.persistToken(accessToken);
-
-                } catch (DuplicateKeyException duplicateKeyOnce) {
-                    /**
-                     * Here we try one more time to persist the token only if we get back DuplicateKeyException. 
-                     * If we still fail after that, throw exception and log an error.
-                     * 
-                     * TODO: monitor how often this happens
-                     */
-                    LOG.warn("Failed to persist token {} due to duplicate token already exists.", accessToken.getToken());
-                    accessToken = AuthenticationToken.updateTokenValue(accessToken);
-                    try {
-                        tokenRepository.persistToken(accessToken);
-
-                    } catch (DuplicateKeyException duplicateKeyAgain) {
-                        LOG.error("Failed to persist token {} for the second time due to duplicate token already exists.", accessToken.getToken());
-                        throw new RepositoryServerException(duplicateKeyAgain);
-                    }
-                }
-                TokenResponse tokenResponse = new TokenResponse(accessToken);
-                return Response.status(Status.OK).entity(tokenResponse).build();
+            case USER_PASSWORD:
+                accessToken =  generateToken(tokenRequest.getLoginName(), tokenRequest.getPassword(), 
+                        userRepository, TokenErrDescFormatter.INVALID_GRANT_USER_PASSWORD);
+                break;
+            case CUSTOMER_CREDENTIAL:
             default:
                 throw new BadTokenRequestException(TokenErrCode.UNSUPPORTED_GRANT_TYPE,  
                         String.format(TokenErrDescFormatter.UNSUPPORTED_GRANT_TYPE.toString(), grantType));
             }
-            
+            TokenResponse tokenResponse = persistAndBuildTokenResponse(accessToken);
+            return Response.status(Status.OK).entity(tokenResponse).build();
+
         } catch (ValidationException badRequest) {
             LOG.info(String.format(GENERATE_TOKEN_ERROR_MESSAGE, BadRequestException.BAD_REQUEST), badRequest);
             throw new InvalidRequestException(badRequest);
@@ -114,8 +100,10 @@ public class TokenActivities {
             RevokeTokenRequest revokeTokenRequest = RevokeTokenRequest.validateRevokeTokenRequest(uriInfo.getQueryParameters());
             AuthenticationTokenType tokenType = revokeTokenRequest.getTokenType();
             String token = revokeTokenRequest.getToken();
+            Long principal = revokeTokenRequest.getPrincipal();
+            
             try {
-                tokenRepository.revokeToken(tokenType, token);
+                tokenRepository.revokeToken(tokenType, token, principal);
 
             } catch(ItemNotFoundException error) {
                 throw new BadTokenRequestException(TokenErrCode.UNRECOGNIZED_TOKEN, 
@@ -136,25 +124,48 @@ public class TokenActivities {
         }
     }
 
-    private @Nonnull AuthenticationToken generateTokenForPasswordGrant(@Nonnull GenerateTokenRequest tokenRequest) 
+    private @Nonnull AuthenticationToken generateToken(@Nonnull String loginName, String clientSecret, 
+            AuthenticationRepository authenticationRepository, TokenErrDescFormatter tokenErrDescFormatter) 
             throws BadTokenRequestException, ValidationException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
-        String loginName = tokenRequest.getLoginName();
-        String password = tokenRequest.getPassword();
-
         try {
-            Long userId = userRepository.getUserIdFromLoginName(loginName);
-            UserAuthorizationInfo userAuthorizationInfo = userRepository.getUserAuthorizationInfo(userId);
+            Long principal = authenticationRepository.getPrincipalFromLoginName(loginName);
+            PrincipalAuthenticationInfo authenticationInfo = authenticationRepository.getAuthorizationInfo(principal);
 
-            if (AuthenticationSecretUtils.authenticateSecret(password, userAuthorizationInfo.getPassword(), userAuthorizationInfo.getSalt())) {
-                return AuthenticationToken.generateTokenBuilder().tokenType(AuthenticationTokenType.ACCESS_TOKEN).userId(userId).build();
+            if (AuthenticationSecretUtils.authenticateSecret(clientSecret, authenticationInfo.getPassword(), authenticationInfo.getSalt())) {
+                return AuthenticationToken.generateTokenBuilder().tokenType(AuthenticationTokenType.ACCESS_TOKEN).principal(principal).build();
             }
 
             throw new BadTokenRequestException(TokenErrCode.INVALID_GRANT,  
-                    String.format(TokenErrDescFormatter.INVALID_GRANT_PASSWORD.toString(), loginName));
+                    String.format(tokenErrDescFormatter.toString(), loginName));
 
         }  catch (ItemNotFoundException error) {
             throw new BadTokenRequestException(TokenErrCode.INVALID_GRANT,  
-                    String.format(TokenErrDescFormatter.INVALID_GRANT_PASSWORD.toString(), loginName));
+                    String.format(tokenErrDescFormatter.toString(), loginName));
         }
+    }
+    
+
+    private @Nonnull TokenResponse persistAndBuildTokenResponse(@Nullable AuthenticationToken accessToken) throws ValidationException, RepositoryServerException {
+        try {
+            tokenRepository.persistToken(accessToken);
+
+        } catch (DuplicateKeyException duplicateKeyOnce) {
+            /**
+             * Here we try one more time to persist the token only if we get back DuplicateKeyException. 
+             * If we still fail after that, throw exception and log an error.
+             * 
+             * TODO: monitor how often this happens
+             */
+            LOG.warn("Failed to persist token {} due to duplicate token already exists.", accessToken.getToken());
+            accessToken = AuthenticationToken.updateTokenValue(accessToken);
+            try {
+                tokenRepository.persistToken(accessToken);
+
+            } catch (DuplicateKeyException duplicateKeyAgain) {
+                LOG.error("Failed to persist token {} for the second time due to duplicate token already exists.", accessToken.getToken());
+                throw new RepositoryServerException(duplicateKeyAgain);
+            }
+        }
+        return new TokenResponse(accessToken);
     }
 }

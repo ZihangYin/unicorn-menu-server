@@ -46,10 +46,10 @@ public class AuthenticationToken {
     @Getter @Nonnull private final AuthenticationTokenType tokenType;
     @Getter @Nonnull private final DateTime issuedAt;
     @Getter @Nonnull private final DateTime expireAt;
-    @Getter @Nonnull private final Long userId;
+    @Getter @Nonnull private final Long principal;
 
-    public static AuthenticationToken generateAccessTokenForUser(@Nonnull Long userId) {
-        return generateTokenBuilder().tokenType(AuthenticationTokenType.ACCESS_TOKEN).userId(userId).build();
+    public static AuthenticationToken generateAccessToken(@Nonnull Long principal) throws ValidationException {
+        return generateTokenBuilder().tokenType(AuthenticationTokenType.ACCESS_TOKEN).principal(principal).build();
     }
     
     public static AuthenticationTokenBuilder generateTokenBuilder() {
@@ -62,13 +62,16 @@ public class AuthenticationToken {
     
     public static AuthenticationToken updateTokenValue(AuthenticationToken currentAuthenticationToken) {
         return new AuthenticationToken(generateRandomToken(), currentAuthenticationToken.getTokenType(),
-                currentAuthenticationToken.getIssuedAt(), currentAuthenticationToken.getExpireAt(), currentAuthenticationToken.getUserId());
+                currentAuthenticationToken.getIssuedAt(), currentAuthenticationToken.getExpireAt(), 
+                currentAuthenticationToken.getPrincipal());
     }
     
     /**
-     * TODO: In order to prevent brute-force attack and better security, we should generate token value based on user_id 
-     * or any salt generated on the server side and assign that token to the user. 
+     * TODO: In order to prevent brute-force attack and better security, we should generate token value based on client_id 
+     * or any salt generated on the server side and assign that token to the client. 
      * Still, we need to guarantee that the token value is globally unique.
+     * 
+     * For now, we require the client to provide both the principal and token to relieve this problem.
      */
     private static String generateRandomToken() {        
         return UUIDGenerator.randomUUID().toString();
@@ -82,7 +85,7 @@ public class AuthenticationToken {
         private AuthenticationTokenType tokenType;
         private DateTime issuedAt = TimeUtils.getDateTimeNowInUTC();
         private DateTime expiredAt = issuedAt.plusHours(DEFAULT_EXPIRATION_IN_HOURS);
-        private Long userId;
+        private Long principal;
 
         public AuthenticationTokenBuilder() {}
 
@@ -106,16 +109,16 @@ public class AuthenticationToken {
             return this;
         }
 
-        public AuthenticationTokenBuilder userId(Long userId) {
-            this.userId = userId;
+        public AuthenticationTokenBuilder principal(Long principal) {
+            this.principal = principal;
             return this;
         }
 
-        public AuthenticationToken build() {
-            if (token == null || tokenType == null || issuedAt == null || expiredAt == null || userId == null) {
-                throw new IllegalArgumentException("Failed while attempting to build authentication token due to missing required parameters");
+        public AuthenticationToken build() throws ValidationException {
+            if (token == null || tokenType == null || issuedAt == null || expiredAt == null || principal == null) {
+                throw new ValidationException("Failed while attempting to build authentication token due to missing required parameters");
             }
-            return new AuthenticationToken(token, tokenType, issuedAt, expiredAt, userId);
+            return new AuthenticationToken(token, tokenType, issuedAt, expiredAt, principal);
         }
     }
 }

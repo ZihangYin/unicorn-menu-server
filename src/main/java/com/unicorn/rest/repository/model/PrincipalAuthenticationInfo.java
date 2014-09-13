@@ -11,44 +11,44 @@ import lombok.Getter;
 
 @EqualsAndHashCode
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class UserAuthorizationInfo {
+public class PrincipalAuthenticationInfo {
     
-    @Getter @Nonnull private final Long userId;
+    @Getter @Nonnull private final Long principal;
     @Getter @Nonnull private final ByteBuffer password;
     @Getter @Nonnull private final ByteBuffer salt;
     
-    public static UserAuthorizationInfoBuilder buildUserAuthorizationInfo() {
-        return new UserAuthorizationInfoBuilder();
+    public static PrincipalAuthorizationInfoBuilder buildPrincipalAuthorizationInfo() {
+        return new PrincipalAuthorizationInfoBuilder();
     }
     
-    public static class UserAuthorizationInfoBuilder {
-        private Long userId;
+    public static class PrincipalAuthorizationInfoBuilder {
+        private Long principal;
         private ByteBuffer password;
         private ByteBuffer salt;
         
-        public UserAuthorizationInfoBuilder() {}
+        public PrincipalAuthorizationInfoBuilder() {}
 
-        public UserAuthorizationInfoBuilder userId(Long userId) {
-            this.userId = userId;
+        public PrincipalAuthorizationInfoBuilder principal(Long principal) {
+            this.principal = principal;
             return this;
         }
         
-        public UserAuthorizationInfoBuilder password(ByteBuffer password) {
+        public PrincipalAuthorizationInfoBuilder password(ByteBuffer password) {
             this.password = password;
             return this;
         }
         
-        public UserAuthorizationInfoBuilder salt(ByteBuffer salt) {
+        public PrincipalAuthorizationInfoBuilder salt(ByteBuffer salt) {
             this.salt = salt;
             return this;
         }
         
-        public UserAuthorizationInfo build() {
-            if (userId == null || password == null || salt == null) {
+        public PrincipalAuthenticationInfo build() {
+            if (principal == null || password == null || salt == null) {
                 throw new IllegalArgumentException("Failed while attempting to build user authorization info due to missing required parameters");
             }
             
-            return new UserAuthorizationInfo(userId, password, salt);
+            return new PrincipalAuthenticationInfo(principal, password, salt);
         }
     }
 }

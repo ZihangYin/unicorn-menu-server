@@ -183,7 +183,7 @@ public class DynamoUserNameToUserIdTable implements UserNameToUserIdTable {
 
         GetItemResult getItemResult;
         try {
-            getItemResult = awsDynamoDBDAO.getItem(getItemRequest);
+            getItemResult = awsDynamoDBDAO.consistentGetItem(getItemRequest);
         } catch (AmazonClientException error) {
             LOG.error( String.format("Failed while attempting to getCurrentUserIdForUserName %s from table %s.", getItemRequest, USER_NAME_TO_ID_TABLE_NAME), error);
             throw new RepositoryServerException(error);
