@@ -13,7 +13,7 @@ import lombok.Setter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.unicorn.rest.repository.model.AuthenticationToken;
+import com.unicorn.rest.repository.model.AuthorizationToken;
 
 @XmlRootElement(name="token")
 @JsonInclude(value=Include.NON_NULL)
@@ -37,11 +37,11 @@ public class TokenResponse {
     @JsonProperty(PRINCIPAL)
     @Getter @Setter private Long principal;
 
-    public TokenResponse(@Nonnull AuthenticationToken authenticationToken) {
-        this.tokenType = authenticationToken.getTokenType().toString();
-        this.accessToken = authenticationToken.getToken();
-        this.expireAt = authenticationToken.getExpireAt().toDate();
-        this.principal = authenticationToken.getPrincipal();
+    public TokenResponse(@Nonnull AuthorizationToken authorizationToken) {
+        this.tokenType = authorizationToken.getTokenType().toString();
+        this.accessToken = authorizationToken.getToken();
+        this.expireAt = authorizationToken.getExpireAt().toDate();
+        this.principal = authorizationToken.getPrincipal();
     }
 
     @Override

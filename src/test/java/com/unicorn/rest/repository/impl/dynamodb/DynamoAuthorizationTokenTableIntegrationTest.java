@@ -14,35 +14,35 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryClientException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
-import com.unicorn.rest.repository.impl.dynamodb.DynamoAuthenticationTokenTable;
-import com.unicorn.rest.repository.model.AuthenticationToken;
+import com.unicorn.rest.repository.impl.dynamodb.DynamoAuthorizationTokenTable;
+import com.unicorn.rest.repository.model.AuthorizationToken;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 import com.unicorn.rest.utils.TimeUtils;
 
-public class DynamoAuthenticationTokenTableIntegrationTest {
-    private static DynamoAuthenticationTokenTable authenticationTokenTable;
+public class DynamoAuthorizationTokenTableIntegrationTest {
+    private static DynamoAuthorizationTokenTable authorizationTokenTable;
 
     @BeforeClass
-    public static void setUpAuthenticationTokenTable() throws RepositoryClientException, RepositoryServerException {
-        authenticationTokenTable = new DynamoAuthenticationTokenTable();
+    public static void setUpAuthorizationTokenTable() throws RepositoryClientException, RepositoryServerException {
+        authorizationTokenTable = new DynamoAuthorizationTokenTable();
         // In case table already exists, exception will be thrown and test will be terminated at this point
-//        authenticationTokenTable.createTable();
+//        authorizationTokenTable.createTable();
     }
     
     @Test
     public void testPersistTokenForUserHappyCase() 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, InterruptedException {
         Long principal = SimpleFlakeKeyGenerator.generateKey();
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(principal);
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(principal);
         try {
-            authenticationTokenTable.persistToken(authenticationToken);
-            AuthenticationToken persistedAuthenticationToken = authenticationTokenTable.getToken(authenticationToken.getTokenType(), authenticationToken.getToken());
-            assertEquals(authenticationToken, persistedAuthenticationToken);
+            authorizationTokenTable.persistToken(authorizationToken);
+            AuthorizationToken persistedAuthorizationToken = authorizationTokenTable.getToken(authorizationToken.getTokenType(), authorizationToken.getToken());
+            assertEquals(authorizationToken, persistedAuthorizationToken);
 
         } finally {
             try {
                 Thread.sleep(100);
-                authenticationTokenTable.deleteExpiredToken(authenticationToken.getTokenType(), authenticationToken.getToken());
+                authorizationTokenTable.deleteExpiredToken(authorizationToken.getTokenType(), authorizationToken.getToken());
             } catch (ItemNotFoundException | RepositoryServerException ignore) {}
         }
     }
@@ -51,7 +51,7 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testPersistTokenWithInvalidRequest() 
             throws DuplicateKeyException, RepositoryServerException {
         try {
-            authenticationTokenTable.persistToken(null);
+            authorizationTokenTable.persistToken(null);
         } catch (ValidationException error) {
             return;
         } 
@@ -62,24 +62,24 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testPersistTokenWithExistedToken() 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, InterruptedException {
         Long principal = SimpleFlakeKeyGenerator.generateKey();
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(principal);
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(principal);
         
-        AuthenticationToken anotherAuthenticationToken = AuthenticationToken.buildTokenBuilder(authenticationToken.getToken()).
-                tokenType(authenticationToken.getTokenType()).principal(SimpleFlakeKeyGenerator.generateKey()).build();
+        AuthorizationToken anotherAuthorizationToken = AuthorizationToken.buildTokenBuilder(authorizationToken.getToken()).
+                tokenType(authorizationToken.getTokenType()).principal(SimpleFlakeKeyGenerator.generateKey()).build();
         try {
-            authenticationTokenTable.persistToken(authenticationToken);
+            authorizationTokenTable.persistToken(authorizationToken);
             try {
-                authenticationTokenTable.persistToken(anotherAuthenticationToken);
+                authorizationTokenTable.persistToken(anotherAuthorizationToken);
             } catch(DuplicateKeyException error) { 
-                AuthenticationToken persistedAuthenticationToken = authenticationTokenTable.getToken(authenticationToken.getTokenType(), authenticationToken.getToken());
-                assertEquals(authenticationToken, persistedAuthenticationToken);
+                AuthorizationToken persistedAuthorizationToken = authorizationTokenTable.getToken(authorizationToken.getTokenType(), authorizationToken.getToken());
+                assertEquals(authorizationToken, persistedAuthorizationToken);
                 return;
             }
             fail("Failed while running testPersistTokenWithExistedToken");
         } finally {
             try {
                 Thread.sleep(100);
-                authenticationTokenTable.deleteExpiredToken(authenticationToken.getTokenType(), authenticationToken.getToken());
+                authorizationTokenTable.deleteExpiredToken(authorizationToken.getTokenType(), authorizationToken.getToken());
             } catch (ItemNotFoundException | RepositoryServerException ignore) {}
         }
     }
@@ -88,26 +88,26 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testRevokeTokenForPrincipalHappyCase() 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, InterruptedException {
         Long principal = SimpleFlakeKeyGenerator.generateKey();
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(principal);
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(principal);
         try {
-            authenticationTokenTable.persistToken(authenticationToken);
+            authorizationTokenTable.persistToken(authorizationToken);
             Long beforeRevoke = TimeUtils.getEpochTimeNowInUTC();
             Thread.sleep(100);
-            authenticationTokenTable.revokeTokenForPrincipal(authenticationToken.getTokenType(), authenticationToken.getToken(), principal);
+            authorizationTokenTable.revokeTokenForPrincipal(authorizationToken.getTokenType(), authorizationToken.getToken(), principal);
             Thread.sleep(100);
             Long afterRevoke = TimeUtils.getEpochTimeNowInUTC();
-            AuthenticationToken persistedAuthenticationToken = authenticationTokenTable.getToken(authenticationToken.getTokenType(), authenticationToken.getToken());
-            assertEquals(authenticationToken.getTokenType(), persistedAuthenticationToken.getTokenType());
-            assertEquals(authenticationToken.getToken(), persistedAuthenticationToken.getToken());
-            assertEquals(authenticationToken.getIssuedAt(), persistedAuthenticationToken.getIssuedAt());
-            assertEquals(authenticationToken.getPrincipal(), persistedAuthenticationToken.getPrincipal());
-            DateTime expireTime = persistedAuthenticationToken.getExpireAt();
+            AuthorizationToken persistedAuthorizationToken = authorizationTokenTable.getToken(authorizationToken.getTokenType(), authorizationToken.getToken());
+            assertEquals(authorizationToken.getTokenType(), persistedAuthorizationToken.getTokenType());
+            assertEquals(authorizationToken.getToken(), persistedAuthorizationToken.getToken());
+            assertEquals(authorizationToken.getIssuedAt(), persistedAuthorizationToken.getIssuedAt());
+            assertEquals(authorizationToken.getPrincipal(), persistedAuthorizationToken.getPrincipal());
+            DateTime expireTime = persistedAuthorizationToken.getExpireAt();
             assertTrue(expireTime.isAfter(beforeRevoke) && expireTime.isBefore(afterRevoke));
 
         } finally {
             try {
                 Thread.sleep(100);
-                authenticationTokenTable.deleteExpiredToken(authenticationToken.getTokenType(), authenticationToken.getToken());
+                authorizationTokenTable.deleteExpiredToken(authorizationToken.getTokenType(), authorizationToken.getToken());
             } catch (ItemNotFoundException | RepositoryServerException ignore) {}
         }
     }
@@ -116,14 +116,14 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testRevokeTokenWithExpiredToken() 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, InterruptedException {
         Long principal = SimpleFlakeKeyGenerator.generateKey();
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(principal);
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(principal);
         
         try {
-            authenticationTokenTable.persistToken(authenticationToken);
-            authenticationTokenTable.revokeTokenForPrincipal(authenticationToken.getTokenType(), authenticationToken.getToken(), principal);
+            authorizationTokenTable.persistToken(authorizationToken);
+            authorizationTokenTable.revokeTokenForPrincipal(authorizationToken.getTokenType(), authorizationToken.getToken(), principal);
             Thread.sleep(100);
             try {
-                authenticationTokenTable.revokeTokenForPrincipal(authenticationToken.getTokenType(), authenticationToken.getToken(), principal);
+                authorizationTokenTable.revokeTokenForPrincipal(authorizationToken.getTokenType(), authorizationToken.getToken(), principal);
             } catch (ItemNotFoundException error) {
                 return;
             } 
@@ -131,7 +131,7 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
         } finally {
           try {
               Thread.sleep(100);
-              authenticationTokenTable.deleteExpiredToken(authenticationToken.getTokenType(), authenticationToken.getToken());
+              authorizationTokenTable.deleteExpiredToken(authorizationToken.getTokenType(), authorizationToken.getToken());
           } catch (ItemNotFoundException | RepositoryServerException ignore) {}
       }
     }
@@ -140,7 +140,7 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testRevokeTokenForPrincipalWithInvalidRequest() 
             throws ItemNotFoundException, RepositoryServerException {
         try {
-            authenticationTokenTable.revokeTokenForPrincipal(null, null, null);
+            authorizationTokenTable.revokeTokenForPrincipal(null, null, null);
         } catch (ValidationException error) {
             return;
         } 
@@ -151,10 +151,10 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testRevokeTokenForPrincipalWithNonExistedToken() 
             throws ValidationException, RepositoryServerException {
         Long principal = SimpleFlakeKeyGenerator.generateKey();
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(principal);
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(principal);
         
         try {
-            authenticationTokenTable.revokeTokenForPrincipal(authenticationToken.getTokenType(), authenticationToken.getToken(), principal);
+            authorizationTokenTable.revokeTokenForPrincipal(authorizationToken.getTokenType(), authorizationToken.getToken(), principal);
         } catch (ItemNotFoundException error) {
             return;
         } 
@@ -164,10 +164,10 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     @Test
     public void testRevokeTokenForPrincipalWithUnexpectedPrincipal() 
             throws ValidationException, RepositoryServerException {
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(SimpleFlakeKeyGenerator.generateKey());
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(SimpleFlakeKeyGenerator.generateKey());
         
         try {
-            authenticationTokenTable.revokeTokenForPrincipal(authenticationToken.getTokenType(), authenticationToken.getToken(), SimpleFlakeKeyGenerator.generateKey());
+            authorizationTokenTable.revokeTokenForPrincipal(authorizationToken.getTokenType(), authorizationToken.getToken(), SimpleFlakeKeyGenerator.generateKey());
         } catch (ItemNotFoundException error) {
             return;
         } 
@@ -182,7 +182,7 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testGetTokenWithInvalidRequest() 
             throws ItemNotFoundException, RepositoryServerException {
         try {
-            authenticationTokenTable.getToken(null, null);
+            authorizationTokenTable.getToken(null, null);
         } catch (ValidationException error) {
             return;
         } 
@@ -192,10 +192,10 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     @Test
     public void testGetTokenWithNonExistedToken() 
             throws ValidationException, RepositoryServerException {
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(SimpleFlakeKeyGenerator.generateKey());
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(SimpleFlakeKeyGenerator.generateKey());
         
         try {
-            authenticationTokenTable.getToken(authenticationToken.getTokenType(), authenticationToken.getToken());
+            authorizationTokenTable.getToken(authorizationToken.getTokenType(), authorizationToken.getToken());
         } catch (ItemNotFoundException error) {
             return;
         } 
@@ -206,18 +206,18 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testGetTokenForPrincipalHappyCase() 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, InterruptedException {
         Long principal = SimpleFlakeKeyGenerator.generateKey();
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(principal);
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(principal);
         
         try {
-            authenticationTokenTable.persistToken(authenticationToken);
-            AuthenticationToken persistedAuthenticationToken = authenticationTokenTable.getTokenForPrincipal
-                    (authenticationToken.getTokenType(), authenticationToken.getToken(), principal);
-            assertEquals(authenticationToken, persistedAuthenticationToken);
+            authorizationTokenTable.persistToken(authorizationToken);
+            AuthorizationToken persistedAuthorizationToken = authorizationTokenTable.getTokenForPrincipal
+                    (authorizationToken.getTokenType(), authorizationToken.getToken(), principal);
+            assertEquals(authorizationToken, persistedAuthorizationToken);
 
         } finally {
             try {
                 Thread.sleep(100);
-                authenticationTokenTable.deleteExpiredToken(authenticationToken.getTokenType(), authenticationToken.getToken());
+                authorizationTokenTable.deleteExpiredToken(authorizationToken.getTokenType(), authorizationToken.getToken());
             } catch (ItemNotFoundException | RepositoryServerException ignore) {}
         }
     }
@@ -226,9 +226,9 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testGetTokenForPrincipalWithInvalidRequest() 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         Long principal = SimpleFlakeKeyGenerator.generateKey();
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(principal);
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(principal);
         try {
-            authenticationTokenTable.getTokenForPrincipal(authenticationToken.getTokenType(), authenticationToken.getToken(), null);
+            authorizationTokenTable.getTokenForPrincipal(authorizationToken.getTokenType(), authorizationToken.getToken(), null);
         } catch (ValidationException error) {
             return;
         } 
@@ -239,11 +239,11 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testGetTokenForPrincipalWithNonExistedToken() 
             throws ValidationException, RepositoryServerException, InterruptedException {
         Long principal = SimpleFlakeKeyGenerator.generateKey();
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(principal);
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(principal);
         
         try {
             Thread.sleep(100);
-            authenticationTokenTable.getTokenForPrincipal(authenticationToken.getTokenType(), authenticationToken.getToken(), principal);
+            authorizationTokenTable.getTokenForPrincipal(authorizationToken.getTokenType(), authorizationToken.getToken(), principal);
         } catch (ItemNotFoundException error) {
             return;
         } 
@@ -254,22 +254,22 @@ public class DynamoAuthenticationTokenTableIntegrationTest {
     public void testGetTokenForPrincipalWithUnexpectedPrincipal() 
             throws ValidationException, DuplicateKeyException, ItemNotFoundException, RepositoryServerException, InterruptedException {
         Long principal = SimpleFlakeKeyGenerator.generateKey();
-        AuthenticationToken authenticationToken = AuthenticationToken.generateAccessToken(principal);
+        AuthorizationToken authorizationToken = AuthorizationToken.generateAccessToken(principal);
         
         try {
-            authenticationTokenTable.persistToken(authenticationToken);
-            authenticationTokenTable.getTokenForPrincipal(authenticationToken.getTokenType(), authenticationToken.getToken(), SimpleFlakeKeyGenerator.generateKey());
+            authorizationTokenTable.persistToken(authorizationToken);
+            authorizationTokenTable.getTokenForPrincipal(authorizationToken.getTokenType(), authorizationToken.getToken(), SimpleFlakeKeyGenerator.generateKey());
         } catch (ItemNotFoundException error) {
             return;
         } finally {
             Thread.sleep(100);
-            authenticationTokenTable.deleteExpiredToken(authenticationToken.getTokenType(), authenticationToken.getToken());
+            authorizationTokenTable.deleteExpiredToken(authorizationToken.getTokenType(), authorizationToken.getToken());
         }
         fail("Failed while running testGetTokenForPrincipalWithUnexpectedPrincipal");
     }
     
     @AfterClass
-    public static void tearDownAuthenticationTokenTable() throws RepositoryClientException, RepositoryServerException {
-//        authenticationTokenTable.deleteTable();
+    public static void tearDownAuthorizationTokenTable() throws RepositoryClientException, RepositoryServerException {
+//        authorizationTokenTable.deleteTable();
     }
 }

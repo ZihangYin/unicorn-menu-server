@@ -8,5 +8,5 @@ public interface SubjectPrincipal extends Principal {
      */
     public Long getPrincipal();    
     
-    public AuthenticationScheme getAuthenticationScheme();
+    public AuthorizationScheme getAuthenticationScheme();
 }

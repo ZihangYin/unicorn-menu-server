@@ -23,7 +23,7 @@ public class TokenErrors {
         UNSUPPORTED_GRANT_TYPE ("The authorization grant type %s is not supported by the authorization server."),
         INVALID_GRANT_USER_PASSWORD ("The authentication failed on user %s due to unknown login name or invalid password."),
         INVALID_GRANT_CUSTOMER_CREDENTIAL ("The authentication failed on customer %s due to unknown login name or invalid password."),
-        UNRECOGNIZED_TOKEN("The authentication token %s with token type %s does not exist or is already expired.");
+        UNRECOGNIZED_TOKEN("The authorization token %s with token type %s does not exist or is already expired.");
 
         private String errDesc;
 

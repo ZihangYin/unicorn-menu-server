@@ -11,7 +11,7 @@ import lombok.Getter;
 
 @EqualsAndHashCode
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class PrincipalAuthenticationInfo {
+public class PrincipalAuthorizationInfo {
     
     @Getter @Nonnull private final Long principal;
     @Getter @Nonnull private final ByteBuffer password;
@@ -43,12 +43,12 @@ public class PrincipalAuthenticationInfo {
             return this;
         }
         
-        public PrincipalAuthenticationInfo build() {
+        public PrincipalAuthorizationInfo build() {
             if (principal == null || password == null || salt == null) {
                 throw new IllegalArgumentException("Failed while attempting to build user authorization info due to missing required parameters");
             }
             
-            return new PrincipalAuthenticationInfo(principal, password, salt);
+            return new PrincipalAuthorizationInfo(principal, password, salt);
         }
     }
 }

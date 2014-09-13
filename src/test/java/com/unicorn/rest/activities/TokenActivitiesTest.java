@@ -33,10 +33,11 @@ import com.unicorn.rest.repository.exception.DuplicateKeyException;
 import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
-import com.unicorn.rest.repository.impl.AuthenticationTokenRepositoryImpl;
+import com.unicorn.rest.repository.impl.AuthorizationTokenRepositoryImpl;
+import com.unicorn.rest.repository.impl.CustomerRepositoryImpl;
 import com.unicorn.rest.repository.impl.UserRepositoryImpl;
-import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
-import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationTokenType;
+import com.unicorn.rest.repository.model.AuthorizationToken.AuthorizationTokenType;
+import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
 import com.unicorn.rest.server.GrizzlyServerTestBase;
 import com.unicorn.rest.server.injector.TestRepositoryBinder;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
@@ -61,17 +62,18 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
          */
         Mockito.reset(repositoryBinder.getMockedTokenRepository());
         Mockito.reset(repositoryBinder.getMockedUserRepository());
+        Mockito.reset(repositoryBinder.getMockedCustomerRepository());
     }
 
-    private PrincipalAuthenticationInfo createUserAuthorizationInfo(Long principal, String password) 
+    private PrincipalAuthorizationInfo createAuthorizationInfo(Long principal, String password) 
             throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
         ByteBuffer salt = AuthenticationSecretUtils.generateRandomSalt();
         ByteBuffer hashedPassword = AuthenticationSecretUtils.generateHashedSecretWithSalt(password, salt);
-        return PrincipalAuthenticationInfo.buildPrincipalAuthorizationInfo()
+        return PrincipalAuthorizationInfo.buildPrincipalAuthorizationInfo()
                 .principal(principal).password(hashedPassword).salt(salt).build();
     }
     
-    private void mockUserAuthenticationHappyCase(String loginName, String password, PrincipalAuthenticationInfo expectedUserAuthorizationInfo) 
+    private void mockUserAuthorizationHappyCase(String loginName, String password, PrincipalAuthorizationInfo expectedUserAuthorizationInfo) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
         Long principal = expectedUserAuthorizationInfo.getPrincipal();
@@ -79,7 +81,15 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         Mockito.doReturn(expectedUserAuthorizationInfo).when(mockedUserRepository).getAuthorizationInfoForPrincipal(principal);
     }
 
-    private void mockUserAuthenticationNoUser(String loginName, String password) 
+    private void mockCustomerAuthorizationHappyCase(String loginName, String credentail, PrincipalAuthorizationInfo expectedCustomerAuthorizationInfo) 
+            throws ValidationException, ItemNotFoundException, RepositoryServerException {
+        CustomerRepositoryImpl mockedCustomerRepository = repositoryBinder.getMockedCustomerRepository();
+        Long principal = expectedCustomerAuthorizationInfo.getPrincipal();
+        Mockito.doReturn(principal).when(mockedCustomerRepository).getPrincipalForLoginName(loginName);
+        Mockito.doReturn(expectedCustomerAuthorizationInfo).when(mockedCustomerRepository).getAuthorizationInfoForPrincipal(principal);
+    }
+    
+    private void mockUserAuthorizationNoUser(String loginName, String password) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
         ItemNotFoundException itemNotFound = new ItemNotFoundException();
@@ -88,46 +98,46 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
     private void mockTokenPersistencyHappyCase() 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
-        AuthenticationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
+        AuthorizationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
         Mockito.doNothing().when(mockedTokenRepository).persistToken(Mockito.any());
     }
 
     private void mockTokenPersistencyDuplicateTokenOnce() 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
-        AuthenticationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
+        AuthorizationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
         DuplicateKeyException duplicateKey = new DuplicateKeyException();
         Mockito.doThrow(duplicateKey).doNothing().when(mockedTokenRepository).persistToken(Mockito.any());
     }
 
     private void mockTokenPersistencyDuplicateToken() 
             throws ValidationException, DuplicateKeyException, RepositoryServerException {
-        AuthenticationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
+        AuthorizationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
         DuplicateKeyException duplicateKey = new DuplicateKeyException();
         Mockito.doThrow(duplicateKey).when(mockedTokenRepository).persistToken(Mockito.any());
     }
 
     private void mockTokenPersistencyServerError() throws ValidationException, DuplicateKeyException, RepositoryServerException {
-        AuthenticationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
+        AuthorizationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
         RepositoryServerException internalError = new RepositoryServerException("Internal Server Error", null);
         Mockito.doThrow(internalError).when(mockedTokenRepository).persistToken(Mockito.any());
     }
 
-    private void mockTokenRevocationHappyCase(AuthenticationTokenType tokenType, String token, Long principal) 
+    private void mockTokenRevocationHappyCase(AuthorizationTokenType tokenType, String token, Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        AuthenticationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
+        AuthorizationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
         Mockito.doNothing().when(mockedTokenRepository).revokeToken(tokenType, token, principal);
     }
 
-    private void mockTokenRevocationNoToken(AuthenticationTokenType tokenType, String token, Long principal) 
+    private void mockTokenRevocationNoToken(AuthorizationTokenType tokenType, String token, Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        AuthenticationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
+        AuthorizationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
         ItemNotFoundException itemNotFound = new ItemNotFoundException();
         Mockito.doThrow(itemNotFound).when(mockedTokenRepository).revokeToken(tokenType, token, principal);
     }
 
-    private void mockTokenRevocationServerError(AuthenticationTokenType tokenType, String token, Long principal) 
+    private void mockTokenRevocationServerError(AuthorizationTokenType tokenType, String token, Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        AuthenticationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
+        AuthorizationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
         RepositoryServerException internalError = new RepositoryServerException("Internal Server Error", null);
         Mockito.doThrow(internalError).when(mockedTokenRepository).revokeToken(tokenType, token, principal);
     }
@@ -136,12 +146,12 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
      * Happy Case
      */
     @Test
-    public void testGenerateTokenForPasswordHappyCase() throws Exception {
+    public void testGenerateTokenForUserPasswordHappyCase() throws Exception {
         String loginName = "login_name";
         String password = "1a2b3c";
         Long principal = SimpleFlakeKeyGenerator.generateKey();
         
-        mockUserAuthenticationHappyCase(loginName, password, createUserAuthorizationInfo(principal, password));
+        mockUserAuthorizationHappyCase(loginName, password, createAuthorizationInfo(principal, password));
         mockTokenPersistencyHappyCase();
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
                 .queryParam(GenerateTokenRequest.PASSWORD, password)
@@ -152,22 +162,44 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         TokenResponse tokenResponse = response.readEntity(TokenResponse.class);
 
         assertNotNull(tokenResponse);
-        assertEquals(AuthenticationTokenType.ACCESS_TOKEN.toString(), tokenResponse.getTokenType());
+        assertEquals(AuthorizationTokenType.ACCESS_TOKEN.toString(), tokenResponse.getTokenType());
+        assertNotNull(tokenResponse.getAccessToken());
+        assertNotNull(tokenResponse.getExpireAt());
+        assertEquals(principal, tokenResponse.getPrincipal());
+    }
+    
+    @Test
+    public void testGenerateTokenForCustomerCredentialdHappyCase() throws Exception {
+        String loginName = "login_name";
+        String credential = "1a2b3c";
+        Long principal = SimpleFlakeKeyGenerator.generateKey();
+        
+        mockCustomerAuthorizationHappyCase(loginName, credential, createAuthorizationInfo(principal, credential));
+        mockTokenPersistencyHappyCase();
+        Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
+                .queryParam(GenerateTokenRequest.CREDENTIAL, credential)
+                .queryParam(GenerateTokenRequest.GRANT_TYPE, GrantType.CUSTOMER_CREDENTIAL.toString()).request(MediaType.APPLICATION_JSON).get();
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(MediaType.APPLICATION_JSON, response.getHeaderString(HttpHeaders.CONTENT_TYPE));
+
+        TokenResponse tokenResponse = response.readEntity(TokenResponse.class);
+
+        assertNotNull(tokenResponse);
+        assertEquals(AuthorizationTokenType.ACCESS_TOKEN.toString(), tokenResponse.getTokenType());
         assertNotNull(tokenResponse.getAccessToken());
         assertNotNull(tokenResponse.getExpireAt());
         assertEquals(principal, tokenResponse.getPrincipal());
     }
 
     @Test
-    public void testGenerateTokenForPasswordWithDuplicateTokenOnceHappyCase() throws Exception {
+    public void testGenerateTokenForUserPasswordWithDuplicateTokenOnceHappyCase() throws Exception {
 
         String loginName = "login_name";
         String password = "1a2b3c";
         Long principal = SimpleFlakeKeyGenerator.generateKey();
         
-        mockUserAuthenticationHappyCase(loginName, password, createUserAuthorizationInfo(principal, password));
+        mockUserAuthorizationHappyCase(loginName, password, createAuthorizationInfo(principal, password));
         mockTokenPersistencyDuplicateTokenOnce();
-
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
                 .queryParam(GenerateTokenRequest.PASSWORD, password)
                 .queryParam(GenerateTokenRequest.GRANT_TYPE, GrantType.USER_PASSWORD.toString()).request(MediaType.APPLICATION_JSON).get();
@@ -176,15 +208,38 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
         TokenResponse tokenResponse = response.readEntity(TokenResponse.class);
         assertNotNull(tokenResponse);
-        assertEquals(AuthenticationTokenType.ACCESS_TOKEN.toString(), tokenResponse.getTokenType());
+        assertEquals(AuthorizationTokenType.ACCESS_TOKEN.toString(), tokenResponse.getTokenType());
+        assertNotNull(tokenResponse.getAccessToken());
+        assertNotNull(tokenResponse.getExpireAt());
+        assertEquals(principal, tokenResponse.getPrincipal());
+    }
+    
+    @Test
+    public void testGenerateTokenForCustomerCredentialdWithDuplicateTokenOnceHappyCase() throws Exception {
+        String loginName = "login_name";
+        String credential = "1a2b3c";
+        Long principal = SimpleFlakeKeyGenerator.generateKey();
+        
+        mockCustomerAuthorizationHappyCase(loginName, credential, createAuthorizationInfo(principal, credential));
+        mockTokenPersistencyDuplicateTokenOnce();
+        Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
+                .queryParam(GenerateTokenRequest.CREDENTIAL, credential)
+                .queryParam(GenerateTokenRequest.GRANT_TYPE, GrantType.CUSTOMER_CREDENTIAL.toString()).request(MediaType.APPLICATION_JSON).get();
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(MediaType.APPLICATION_JSON, response.getHeaderString(HttpHeaders.CONTENT_TYPE));
+
+        TokenResponse tokenResponse = response.readEntity(TokenResponse.class);
+
+        assertNotNull(tokenResponse);
+        assertEquals(AuthorizationTokenType.ACCESS_TOKEN.toString(), tokenResponse.getTokenType());
         assertNotNull(tokenResponse.getAccessToken());
         assertNotNull(tokenResponse.getExpireAt());
         assertEquals(principal, tokenResponse.getPrincipal());
     }
 
     @Test
-    public void testTokenActivitiesRevokeTokenWithoutAuthenticationHeaderHappyCase() throws Exception {
-        AuthenticationTokenType tokenType = AuthenticationTokenType.ACCESS_TOKEN;
+    public void testTokenActivitiesRevokeTokenWithoutAuthorizationHeaderHappyCase() throws Exception {
+        AuthorizationTokenType tokenType = AuthorizationTokenType.ACCESS_TOKEN;
         String token = "token";
         Long principal = SimpleFlakeKeyGenerator.generateKey();
         
@@ -262,10 +317,9 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         assertEquals(expectedException.getErrorCode(), errorResponse.getErrorCode());
         assertEquals(expectedException.getErrorDescription(), errorResponse.getErrorDescription());
     }
-    
 
     @Test
-    public void testGenerateTokenForPasswordMissingPassword() throws Exception {
+    public void testGenerateTokenForUserPasswordMissingPassword() throws Exception {
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, "login_name")
                 .queryParam(GenerateTokenRequest.GRANT_TYPE, GrantType.USER_PASSWORD.toString()).request(MediaType.APPLICATION_JSON).get();
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
@@ -314,10 +368,10 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
 
     @Test
-    public void testGenerateTokenForPasswordUserDoesNotExist() throws Exception {
+    public void testGenerateTokenForUserPasswordUserDoesNotExist() throws Exception {
         String loginName = "login_name";
         String password = "1a2b3c";
-        mockUserAuthenticationNoUser(loginName, password);
+        mockUserAuthorizationNoUser(loginName, password);
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
                 .queryParam(GenerateTokenRequest.PASSWORD, password)
                 .queryParam(GenerateTokenRequest.GRANT_TYPE, GrantType.USER_PASSWORD.toString()).request(MediaType.APPLICATION_JSON).get();
@@ -333,11 +387,11 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
     }
     
     @Test
-    public void testGenerateTokenForPasswordWrongPassword() throws Exception {
+    public void testGenerateTokenForUserPasswordWrongPassword() throws Exception {
         String loginName = "login_name";
         String password = "1a2b3c";
         
-        mockUserAuthenticationHappyCase(loginName, password, createUserAuthorizationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
+        mockUserAuthorizationHappyCase(loginName, password, createAuthorizationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
         String wrongPassword = "wrong_password";
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
                 .queryParam(GenerateTokenRequest.PASSWORD, wrongPassword)
@@ -364,7 +418,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         ErrorResponse errorResponse= response.readEntity(ErrorResponse.class);
         assertNotNull(errorResponse);
         InvalidRequestException expectedException = new InvalidRequestException(
-                new ValidationException(String.format("The authentication token type %s is not supported by the authorization server", "wrong_token_type")));
+                new ValidationException(String.format("The authorization token type %s is not supported by the authorization server", "wrong_token_type")));
         assertEquals(expectedException.getClass().getSimpleName(), errorResponse.getErrorType());
         assertEquals(expectedException.getErrorCode(), errorResponse.getErrorCode());
         assertEquals(expectedException.getErrorDescription(), errorResponse.getErrorDescription());
@@ -381,7 +435,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         ErrorResponse errorResponse= response.readEntity(ErrorResponse.class);
         assertNotNull(errorResponse);
         InvalidRequestException expectedException = new InvalidRequestException(
-                new ValidationException("The authentication token type null is not supported by the authorization server"));
+                new ValidationException("The authorization token type null is not supported by the authorization server"));
         assertEquals(expectedException.getClass().getSimpleName(), errorResponse.getErrorType());
         assertEquals(expectedException.getErrorCode(), errorResponse.getErrorCode());
         assertEquals(expectedException.getErrorDescription(), errorResponse.getErrorDescription());
@@ -389,7 +443,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
     
     @Test
     public void testRevokeTokenFailedToRevokeTokenMissingToken() throws Exception {
-        AuthenticationTokenType tokenType = AuthenticationTokenType.ACCESS_TOKEN;
+        AuthorizationTokenType tokenType = AuthorizationTokenType.ACCESS_TOKEN;
         
         Response response = webTarget.queryParam(RevokeTokenRequest.TOKEN_TYPE, tokenType)
                 .queryParam(RevokeTokenRequest.PRINCIPAL, SimpleFlakeKeyGenerator.generateKey())
@@ -408,7 +462,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
     
     @Test
     public void testRevokeTokenFailedToRevokeTokenMissingPrincipal() throws Exception {
-        AuthenticationTokenType tokenType = AuthenticationTokenType.ACCESS_TOKEN;
+        AuthorizationTokenType tokenType = AuthorizationTokenType.ACCESS_TOKEN;
         
         Response response = webTarget.queryParam(RevokeTokenRequest.TOKEN_TYPE, tokenType)
                 .queryParam(RevokeTokenRequest.TOKEN, "token")
@@ -427,7 +481,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
     
     @Test
     public void testRevokeTokenFailedToRevokeTokenInvalidFormatPrincipal() throws Exception {
-        AuthenticationTokenType tokenType = AuthenticationTokenType.ACCESS_TOKEN;
+        AuthorizationTokenType tokenType = AuthorizationTokenType.ACCESS_TOKEN;
         
         Response response = webTarget.queryParam(RevokeTokenRequest.TOKEN_TYPE, tokenType)
                 .queryParam(RevokeTokenRequest.TOKEN, "token")
@@ -447,7 +501,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
     @Test
     public void testRevokeTokenFailedToRevokeTokenTokenDoesNotExist() throws Exception {
-        AuthenticationTokenType tokenType = AuthenticationTokenType.ACCESS_TOKEN;
+        AuthorizationTokenType tokenType = AuthorizationTokenType.ACCESS_TOKEN;
         String token = "token";
         Long principal = SimpleFlakeKeyGenerator.generateKey();
         
@@ -462,7 +516,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         assertNotNull(errorResponse);
         assertEquals(BadTokenRequestException.class.getSimpleName(), errorResponse.getErrorType());
         assertEquals(TokenErrCode.UNRECOGNIZED_TOKEN.toString(), errorResponse.getErrorCode());
-        assertEquals(String.format(TokenErrDescFormatter.UNRECOGNIZED_TOKEN.toString(), "token", AuthenticationTokenType.ACCESS_TOKEN), 
+        assertEquals(String.format(TokenErrDescFormatter.UNRECOGNIZED_TOKEN.toString(), "token", AuthorizationTokenType.ACCESS_TOKEN), 
                 errorResponse.getErrorDescription());
     }
 
@@ -474,7 +528,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
         String loginName = "login_name";
         String password = "1a2b3c";
-        mockUserAuthenticationHappyCase(loginName, password, createUserAuthorizationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
+        mockUserAuthorizationHappyCase(loginName, password, createAuthorizationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
         mockTokenPersistencyDuplicateToken();
 
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
@@ -496,7 +550,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
         String loginName = "login_name";
         String password = "1a2b3c";
-        mockUserAuthenticationHappyCase(loginName, password, createUserAuthorizationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
+        mockUserAuthorizationHappyCase(loginName, password, createAuthorizationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
         mockTokenPersistencyServerError();
 
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
@@ -515,7 +569,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
     @Test
     public void testRevokeTokenFailedToRevokeTokenServerError() throws Exception {
-        AuthenticationTokenType tokenType = AuthenticationTokenType.ACCESS_TOKEN;
+        AuthorizationTokenType tokenType = AuthorizationTokenType.ACCESS_TOKEN;
         String token = "token";
         Long principal = SimpleFlakeKeyGenerator.generateKey();
         

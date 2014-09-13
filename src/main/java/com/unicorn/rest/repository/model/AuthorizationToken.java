@@ -18,13 +18,13 @@ import com.unicorn.rest.utils.UUIDGenerator;
 @EqualsAndHashCode
 @ToString
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class AuthenticationToken {
+public class AuthorizationToken {
 
-    public enum AuthenticationTokenType {
+    public enum AuthorizationTokenType {
         ACCESS_TOKEN("bearer");
 
         private String tokenType;
-        private AuthenticationTokenType(String tokenType) {
+        private AuthorizationTokenType(String tokenType) {
             this.tokenType = tokenType;
         }
 
@@ -33,37 +33,37 @@ public class AuthenticationToken {
             return tokenType;
         }
         
-        public static AuthenticationTokenType fromString(@Nullable String tokenType) throws ValidationException {
+        public static AuthorizationTokenType fromString(@Nullable String tokenType) throws ValidationException {
             if (ACCESS_TOKEN.toString().equals(tokenType)) {
-                return AuthenticationTokenType.ACCESS_TOKEN;
+                return AuthorizationTokenType.ACCESS_TOKEN;
             } 
-            throw new ValidationException(String.format("The authentication token type %s is not supported by the authorization server", tokenType));
+            throw new ValidationException(String.format("The authorization token type %s is not supported by the authorization server", tokenType));
         }
     }
     
     // TODO: In future, we might consider using Optional<T> for optional parameters
     @Getter @Nonnull private final String token;
-    @Getter @Nonnull private final AuthenticationTokenType tokenType;
+    @Getter @Nonnull private final AuthorizationTokenType tokenType;
     @Getter @Nonnull private final DateTime issuedAt;
     @Getter @Nonnull private final DateTime expireAt;
     @Getter @Nonnull private final Long principal;
 
-    public static AuthenticationToken generateAccessToken(@Nonnull Long principal) throws ValidationException {
-        return generateTokenBuilder().tokenType(AuthenticationTokenType.ACCESS_TOKEN).principal(principal).build();
+    public static AuthorizationToken generateAccessToken(@Nonnull Long principal) throws ValidationException {
+        return generateTokenBuilder().tokenType(AuthorizationTokenType.ACCESS_TOKEN).principal(principal).build();
     }
     
-    public static AuthenticationTokenBuilder generateTokenBuilder() {
-        return new AuthenticationTokenBuilder().token(generateRandomToken());
+    public static AuthorizationTokenBuilder generateTokenBuilder() {
+        return new AuthorizationTokenBuilder().token(generateRandomToken());
     }
 
-    public static AuthenticationTokenBuilder buildTokenBuilder(@Nonnull String token) {
-        return new AuthenticationTokenBuilder().token(token);
+    public static AuthorizationTokenBuilder buildTokenBuilder(@Nonnull String token) {
+        return new AuthorizationTokenBuilder().token(token);
     }
     
-    public static AuthenticationToken updateTokenValue(AuthenticationToken currentAuthenticationToken) {
-        return new AuthenticationToken(generateRandomToken(), currentAuthenticationToken.getTokenType(),
-                currentAuthenticationToken.getIssuedAt(), currentAuthenticationToken.getExpireAt(), 
-                currentAuthenticationToken.getPrincipal());
+    public static AuthorizationToken updateTokenValue(AuthorizationToken currentAuthorizationToken) {
+        return new AuthorizationToken(generateRandomToken(), currentAuthorizationToken.getTokenType(),
+                currentAuthorizationToken.getIssuedAt(), currentAuthorizationToken.getExpireAt(), 
+                currentAuthorizationToken.getPrincipal());
     }
     
     /**
@@ -77,48 +77,48 @@ public class AuthenticationToken {
         return UUIDGenerator.randomUUID().toString();
     }
 
-    public static class AuthenticationTokenBuilder {
+    public static class AuthorizationTokenBuilder {
 
         private static final int DEFAULT_EXPIRATION_IN_HOURS = 7 * 24;
 
         private String token;
-        private AuthenticationTokenType tokenType;
+        private AuthorizationTokenType tokenType;
         private DateTime issuedAt = TimeUtils.getDateTimeNowInUTC();
         private DateTime expiredAt = issuedAt.plusHours(DEFAULT_EXPIRATION_IN_HOURS);
         private Long principal;
 
-        public AuthenticationTokenBuilder() {}
+        public AuthorizationTokenBuilder() {}
 
-        private AuthenticationTokenBuilder token(String token) {
+        private AuthorizationTokenBuilder token(String token) {
             this.token = token;
             return this;
         }
 
-        public AuthenticationTokenBuilder tokenType(AuthenticationTokenType tokenType) {
+        public AuthorizationTokenBuilder tokenType(AuthorizationTokenType tokenType) {
             this.tokenType = tokenType;
             return this;
         }
 
-        public AuthenticationTokenBuilder issuedAt(DateTime issuedAt) {
+        public AuthorizationTokenBuilder issuedAt(DateTime issuedAt) {
             this.issuedAt = issuedAt;
             return this;
         }
         
-        public AuthenticationTokenBuilder expiredAt(DateTime expiredAt) {
+        public AuthorizationTokenBuilder expiredAt(DateTime expiredAt) {
             this.expiredAt = expiredAt;
             return this;
         }
 
-        public AuthenticationTokenBuilder principal(Long principal) {
+        public AuthorizationTokenBuilder principal(Long principal) {
             this.principal = principal;
             return this;
         }
 
-        public AuthenticationToken build() throws ValidationException {
+        public AuthorizationToken build() throws ValidationException {
             if (token == null || tokenType == null || issuedAt == null || expiredAt == null || principal == null) {
-                throw new ValidationException("Failed while attempting to build authentication token due to missing required parameters");
+                throw new ValidationException("Failed while attempting to build authorization token due to missing required parameters");
             }
-            return new AuthenticationToken(token, tokenType, issuedAt, expiredAt, principal);
+            return new AuthorizationToken(token, tokenType, issuedAt, expiredAt, principal);
         }
     }
 }

@@ -36,7 +36,8 @@ public class GrizzlyServerTestBase {
         uri = GrizzlyServerOrchestrator.buildGrizzlyServerURI(serverPropertiesParser, 
                 GrizzlyServerOrchestrator.HTTPS_BASE_URL_PROPERTY, GrizzlyServerOrchestrator.HTTPS_PORT_PROPERTY);
         
-        grizzlyWebServer = GrizzlyServerOrchestrator.startGrizzlyWebServer(DEFAULT_HTTPS_SERVER_PROPERTIES_FILE, GrizzlyServerOrchestrator.createResourceConfig(abstractBinders));
+        grizzlyWebServer = GrizzlyServerOrchestrator.startGrizzlyWebServer(
+                DEFAULT_HTTPS_SERVER_PROPERTIES_FILE, GrizzlyServerOrchestrator.createResourceConfig(abstractBinders));
         client = getHttpsClient ();
     }
     

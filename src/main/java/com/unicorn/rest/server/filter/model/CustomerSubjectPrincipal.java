@@ -5,9 +5,9 @@ import javax.annotation.Nonnull;
 public class CustomerSubjectPrincipal implements SubjectPrincipal {
 
     private final @Nonnull Long customerId;
-    private final @Nonnull AuthenticationScheme authenticationScheme;
+    private final @Nonnull AuthorizationScheme authenticationScheme;
     
-    public CustomerSubjectPrincipal(@Nonnull Long customerId, @Nonnull AuthenticationScheme authenticationScheme) {
+    public CustomerSubjectPrincipal(@Nonnull Long customerId, @Nonnull AuthorizationScheme authenticationScheme) {
         this.customerId = customerId;
         this.authenticationScheme = authenticationScheme;
     }
@@ -18,7 +18,7 @@ public class CustomerSubjectPrincipal implements SubjectPrincipal {
     }
     
     @Override
-    public AuthenticationScheme getAuthenticationScheme() {
+    public AuthorizationScheme getAuthenticationScheme() {
         return this.authenticationScheme;
     }
     

@@ -8,7 +8,7 @@
 	</appenders>
 	
 	<loggers>
-		<root level="DEBUG">
+		<root level="FATAL">
 			<appender-ref ref="Console"/>
 		</root>
 	</loggers>

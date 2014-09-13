@@ -29,16 +29,17 @@ import com.unicorn.rest.activity.model.RevokeTokenRequest;
 import com.unicorn.rest.activity.model.GenerateTokenRequest;
 import com.unicorn.rest.activity.model.TokenResponse;
 import com.unicorn.rest.activity.model.GenerateTokenRequest.GrantType;
-import com.unicorn.rest.repository.AuthenticationRepository;
-import com.unicorn.rest.repository.AuthenticationTokenRepository;
+import com.unicorn.rest.repository.AuthorizationRepository;
+import com.unicorn.rest.repository.AuthorizationTokenRepository;
+import com.unicorn.rest.repository.CustomerRepository;
 import com.unicorn.rest.repository.UserRepository;
 import com.unicorn.rest.repository.exception.DuplicateKeyException;
 import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
-import com.unicorn.rest.repository.model.AuthenticationToken;
-import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
-import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationTokenType;
+import com.unicorn.rest.repository.model.AuthorizationToken;
+import com.unicorn.rest.repository.model.AuthorizationToken.AuthorizationTokenType;
+import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 
 @Path("/v1/tokens")
@@ -48,14 +49,16 @@ public class TokenActivities {
     private static final String GENERATE_TOKEN_ERROR_MESSAGE = "Failed while attempting to fulfill generating token request due to %s: ";
     private static final String REVOKE_TOKEN_ERROR_MESSAGE = "Failed while attempting to fulfill revoking token request due to %s: ";
 
-    private AuthenticationTokenRepository tokenRepository;
+    private AuthorizationTokenRepository tokenRepository;
     private UserRepository userRepository;
+    private CustomerRepository customerrRepository;
 
     @Inject
-    public TokenActivities(AuthenticationTokenRepository tokenRepository, 
-            UserRepository userRepository) {
+    public TokenActivities(AuthorizationTokenRepository tokenRepository, 
+            UserRepository userRepository, CustomerRepository customerrRepository) {
         this.tokenRepository = tokenRepository;
         this.userRepository = userRepository;
+        this.customerrRepository = customerrRepository;
     }
 
     @GET
@@ -66,13 +69,16 @@ public class TokenActivities {
             GenerateTokenRequest tokenRequest = GenerateTokenRequest.validateGenerateTokenRequest(uriInfo.getQueryParameters());
            
             GrantType grantType = tokenRequest.getGrantType();
-            AuthenticationToken accessToken = null;
+            AuthorizationToken accessToken = null;
             switch (grantType) {
             case USER_PASSWORD:
                 accessToken =  generateToken(tokenRequest.getLoginName(), tokenRequest.getPassword(), 
                         userRepository, TokenErrDescFormatter.INVALID_GRANT_USER_PASSWORD);
                 break;
             case CUSTOMER_CREDENTIAL:
+                accessToken =  generateToken(tokenRequest.getLoginName(), tokenRequest.getCredential(), 
+                        customerrRepository, TokenErrDescFormatter.INVALID_GRANT_CUSTOMER_CREDENTIAL);
+                break;
             default:
                 throw new BadTokenRequestException(TokenErrCode.UNSUPPORTED_GRANT_TYPE,  
                         String.format(TokenErrDescFormatter.UNSUPPORTED_GRANT_TYPE.toString(), grantType));
@@ -98,7 +104,7 @@ public class TokenActivities {
             throws BadRequestException, InternalServerErrorException {
         try {
             RevokeTokenRequest revokeTokenRequest = RevokeTokenRequest.validateRevokeTokenRequest(uriInfo.getQueryParameters());
-            AuthenticationTokenType tokenType = revokeTokenRequest.getTokenType();
+            AuthorizationTokenType tokenType = revokeTokenRequest.getTokenType();
             String token = revokeTokenRequest.getToken();
             Long principal = revokeTokenRequest.getPrincipal();
             
@@ -124,15 +130,15 @@ public class TokenActivities {
         }
     }
 
-    private @Nonnull AuthenticationToken generateToken(@Nonnull String loginName, String clientSecret, 
-            AuthenticationRepository authenticationRepository, TokenErrDescFormatter tokenErrDescFormatter) 
+    private @Nonnull AuthorizationToken generateToken(@Nonnull String loginName, String clientSecret, 
+            AuthorizationRepository authorizationRepository, TokenErrDescFormatter tokenErrDescFormatter) 
             throws BadTokenRequestException, ValidationException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
         try {
-            Long principal = authenticationRepository.getPrincipalForLoginName(loginName);
-            PrincipalAuthenticationInfo authenticationInfo = authenticationRepository.getAuthorizationInfoForPrincipal(principal);
+            Long principal = authorizationRepository.getPrincipalForLoginName(loginName);
+            PrincipalAuthorizationInfo authorizationInfo = authorizationRepository.getAuthorizationInfoForPrincipal(principal);
 
-            if (AuthenticationSecretUtils.authenticateSecret(clientSecret, authenticationInfo.getPassword(), authenticationInfo.getSalt())) {
-                return AuthenticationToken.generateTokenBuilder().tokenType(AuthenticationTokenType.ACCESS_TOKEN).principal(principal).build();
+            if (AuthenticationSecretUtils.authenticateSecret(clientSecret, authorizationInfo.getPassword(), authorizationInfo.getSalt())) {
+                return AuthorizationToken.generateTokenBuilder().tokenType(AuthorizationTokenType.ACCESS_TOKEN).principal(principal).build();
             }
 
             throw new BadTokenRequestException(TokenErrCode.INVALID_GRANT,  
@@ -145,7 +151,7 @@ public class TokenActivities {
     }
     
 
-    private @Nonnull TokenResponse persistAndBuildTokenResponse(@Nullable AuthenticationToken accessToken) throws ValidationException, RepositoryServerException {
+    private @Nonnull TokenResponse persistAndBuildTokenResponse(@Nullable AuthorizationToken accessToken) throws ValidationException, RepositoryServerException {
         try {
             tokenRepository.persistToken(accessToken);
 
@@ -157,7 +163,7 @@ public class TokenActivities {
              * TODO: monitor how often this happens
              */
             LOG.warn("Failed to persist token {} due to duplicate token already exists.", accessToken.getToken());
-            accessToken = AuthenticationToken.updateTokenValue(accessToken);
+            accessToken = AuthorizationToken.updateTokenValue(accessToken);
             try {
                 tokenRepository.persistToken(accessToken);
 

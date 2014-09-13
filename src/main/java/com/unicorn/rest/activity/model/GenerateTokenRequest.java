@@ -66,7 +66,7 @@ public class GenerateTokenRequest {
             this.grantType = GrantType.USER_PASSWORD;
             this.password = RequestValidator.validateRequiredParameter(PASSWORD, password);
         } else if (GrantType.CUSTOMER_CREDENTIAL.toString().equals(grantType)) {
-            this.credential = RequestValidator.validateRequiredParameter(CREDENTIAL, password);
+            this.credential = RequestValidator.validateRequiredParameter(CREDENTIAL, credential);
             this.grantType = GrantType.CUSTOMER_CREDENTIAL;
             
         } else {

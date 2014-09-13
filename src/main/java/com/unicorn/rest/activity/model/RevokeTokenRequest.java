@@ -12,7 +12,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.unicorn.rest.activities.utils.RequestValidator;
 import com.unicorn.rest.repository.exception.ValidationException;
-import com.unicorn.rest.repository.model.AuthenticationToken.AuthenticationTokenType;
+import com.unicorn.rest.repository.model.AuthorizationToken.AuthorizationTokenType;
 
 @EqualsAndHashCode
 @ToString
@@ -22,7 +22,7 @@ public class RevokeTokenRequest {
     public static final String TOKEN = "token";
     public static final String PRINCIPAL = "principal";
  
-    @Getter @Nonnull private final AuthenticationTokenType tokenType;
+    @Getter @Nonnull private final AuthorizationTokenType tokenType;
     @Getter @Nonnull private final String token;
     @Getter @Nonnull private final Long principal;
 
@@ -37,7 +37,7 @@ public class RevokeTokenRequest {
     private RevokeTokenRequest(@Nullable String tokenType, @Nullable String token, @Nullable String principalStr) 
             throws ValidationException {
         
-        this.tokenType = AuthenticationTokenType.fromString(tokenType);
+        this.tokenType = AuthorizationTokenType.fromString(tokenType);
         this.token = RequestValidator.validateRequiredParameter(TOKEN, token);
         try {
             this.principal = Long.parseLong(principalStr);

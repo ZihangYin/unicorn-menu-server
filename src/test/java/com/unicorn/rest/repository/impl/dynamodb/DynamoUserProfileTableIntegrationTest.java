@@ -18,7 +18,7 @@ import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.impl.dynamodb.DynamoUserProfileTable;
 import com.unicorn.rest.repository.model.DisplayName;
-import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
@@ -43,7 +43,7 @@ public class DynamoUserProfileTableIntegrationTest {
 
         try {
             userProfileTable.createUser(userPrincipal, userDisplayName, password, salt);
-            PrincipalAuthenticationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userPrincipal);
+            PrincipalAuthorizationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userPrincipal);
             assertEquals(userPrincipal, userAuthorizationInfo.getPrincipal());
             assertEquals(password, userAuthorizationInfo.getPassword());
             assertEquals(salt, userAuthorizationInfo.getSalt());
@@ -81,7 +81,7 @@ public class DynamoUserProfileTableIntegrationTest {
             try {
                 userProfileTable.createUser(userPrincipal, userDisplayName2, password2, salt2);
             } catch(DuplicateKeyException error) {
-                PrincipalAuthenticationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userPrincipal);
+                PrincipalAuthorizationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userPrincipal);
                 assertEquals(userPrincipal, userAuthorizationInfo.getPrincipal());
                 assertEquals(password1, userAuthorizationInfo.getPassword());
                 assertEquals(salt1, userAuthorizationInfo.getSalt());

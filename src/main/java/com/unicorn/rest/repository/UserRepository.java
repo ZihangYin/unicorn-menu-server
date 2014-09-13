@@ -12,7 +12,7 @@ import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.DisplayName;
 import com.unicorn.rest.repository.model.Name;
 
-public interface UserRepository extends AuthenticationRepository {
+public interface UserRepository extends AuthorizationRepository {
     
     /**
      * Generate globally unique user_principal using SimpleflakeKeyGenerator
