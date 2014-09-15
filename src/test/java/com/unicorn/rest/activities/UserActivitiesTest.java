@@ -73,7 +73,7 @@ public class UserActivitiesTest extends GrizzlyServerTestBase {
     private void mockCreateNewUserServerError(UserRequest userRequest) 
             throws ValidationException, DuplicateKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
-        RepositoryServerException internalError = new RepositoryServerException("Internal Server Error", null);
+        RepositoryServerException internalError = new RepositoryServerException("Repository Internal Server Error", null);
         Mockito.doThrow(internalError).when(mockedUserRepository).registerUser(
                 Name.validateUserName(userRequest.getUserName()), DisplayName.validateUserDisplayName(userRequest.getUserDisplayName()), userRequest.getPassword());
     }

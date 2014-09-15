@@ -118,7 +118,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
     private void mockTokenPersistencyServerError() throws ValidationException, DuplicateKeyException, RepositoryServerException {
         AuthorizationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
-        RepositoryServerException internalError = new RepositoryServerException("Internal Server Error", null);
+        RepositoryServerException internalError = new RepositoryServerException("Repository Internal Server Error", null);
         Mockito.doThrow(internalError).when(mockedTokenRepository).persistToken(Mockito.any());
     }
 
@@ -138,7 +138,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
     private void mockTokenRevocationServerError(AuthorizationTokenType tokenType, String token, Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         AuthorizationTokenRepositoryImpl mockedTokenRepository = repositoryBinder.getMockedTokenRepository();
-        RepositoryServerException internalError = new RepositoryServerException("Internal Server Error", null);
+        RepositoryServerException internalError = new RepositoryServerException("Repository Internal Server Error", null);
         Mockito.doThrow(internalError).when(mockedTokenRepository).revokeToken(tokenType, token, principal);
     }
 
@@ -298,7 +298,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         assertNotNull(errorResponse);
         assertEquals(BadTokenRequestException.class.getSimpleName(), errorResponse.getErrorType());
         assertEquals(TokenErrCode.UNSUPPORTED_GRANT_TYPE.toString(), errorResponse.getErrorCode());
-        assertEquals( String.format(TokenErrDescFormatter.UNSUPPORTED_GRANT_TYPE.toString(), "unsupported_grant_type"), 
+        assertEquals( String.format(TokenErrDescFormatter.UNSUPPORTED_GRANT_TYPE.toString(), TokenErrCode.UNSUPPORTED_GRANT_TYPE), 
                 errorResponse.getErrorDescription());
     }
 
