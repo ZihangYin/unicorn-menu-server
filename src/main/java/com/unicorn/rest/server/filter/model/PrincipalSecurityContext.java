@@ -5,14 +5,14 @@ import javax.inject.Provider;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 
-public class SubjectSecurityContext implements SecurityContext {
+public class PrincipalSecurityContext implements SecurityContext {
     
     @Inject 
     Provider<UriInfo> uriInfo;
     
     private SubjectPrincipal subjectPrincipal;
     
-    public SubjectSecurityContext(SubjectPrincipal subjectPrincipal) {
+    public PrincipalSecurityContext(SubjectPrincipal subjectPrincipal) {
         this.subjectPrincipal = subjectPrincipal;
     }
     
@@ -23,7 +23,7 @@ public class SubjectSecurityContext implements SecurityContext {
 
     @Override
     public boolean isSecure() {
-        return "https".equals(uriInfo.get().getRequestUri().getScheme());
+        return true;
     }
 
     @Override

@@ -11,7 +11,7 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.DisplayName;
-import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 
 @Singleton
 public interface CustomerProfileTable extends Table {
@@ -35,7 +35,7 @@ public interface CustomerProfileTable extends Table {
             throws ValidationException, DuplicateKeyException, RepositoryServerException;
     
     /**
-     * Build customer_authorization_info from attributes, which contains customer_display_name, hashed password and salt.
+     * Build customer_authentication_info from attributes, which contains customer_display_name, hashed password and salt.
      * 
      * @param customerPrincipal @Nullable
      * @return 
@@ -43,6 +43,6 @@ public interface CustomerProfileTable extends Table {
      * @throws ItemNotFoundException if customer_principal does not exist
      * @throws RepositoryServerException internal server error
      */
-    public @Nonnull PrincipalAuthorizationInfo getCustomerAuthorizationInfo(@Nullable Long customerPrincipal) 
+    public @Nonnull PrincipalAuthenticationInfo getCustomerAuthenticationInfo(@Nullable Long customerPrincipal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
 }

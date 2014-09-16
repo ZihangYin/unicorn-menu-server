@@ -9,7 +9,7 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.Name;
-import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.repository.table.CustomerProfileTable;
 import com.unicorn.rest.repository.table.NameToPrincipalTable;
 
@@ -35,9 +35,9 @@ public class CustomerRepositoryImpl implements CustomerRepository {
     }
 
     @Override
-    public PrincipalAuthorizationInfo getAuthorizationInfoForPrincipal(Long customerPrincipal) 
+    public PrincipalAuthenticationInfo getAuthenticationInfoForPrincipal(Long customerPrincipal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        return customerProfileTable.getCustomerAuthorizationInfo(customerPrincipal);
+        return customerProfileTable.getCustomerAuthenticationInfo(customerPrincipal);
     }
 
 }

@@ -18,7 +18,7 @@ import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.impl.dynamodb.DynamoUserProfileTable;
 import com.unicorn.rest.repository.model.DisplayName;
-import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
@@ -43,10 +43,10 @@ public class DynamoUserProfileTableIntegrationTest {
 
         try {
             userProfileTable.createUser(userPrincipal, userDisplayName, password, salt);
-            PrincipalAuthorizationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userPrincipal);
-            assertEquals(userPrincipal, userAuthorizationInfo.getPrincipal());
-            assertEquals(password, userAuthorizationInfo.getPassword());
-            assertEquals(salt, userAuthorizationInfo.getSalt());
+            PrincipalAuthenticationInfo userAuthenticationInfo = userProfileTable.getUserAuthenticationInfo(userPrincipal);
+            assertEquals(userPrincipal, userAuthenticationInfo.getPrincipal());
+            assertEquals(password, userAuthenticationInfo.getPassword());
+            assertEquals(salt, userAuthenticationInfo.getSalt());
 
         } finally {
             try {
@@ -81,10 +81,10 @@ public class DynamoUserProfileTableIntegrationTest {
             try {
                 userProfileTable.createUser(userPrincipal, userDisplayName2, password2, salt2);
             } catch(DuplicateKeyException error) {
-                PrincipalAuthorizationInfo userAuthorizationInfo = userProfileTable.getUserAuthorizationInfo(userPrincipal);
-                assertEquals(userPrincipal, userAuthorizationInfo.getPrincipal());
-                assertEquals(password1, userAuthorizationInfo.getPassword());
-                assertEquals(salt1, userAuthorizationInfo.getSalt());
+                PrincipalAuthenticationInfo userAuthenticationInfo = userProfileTable.getUserAuthenticationInfo(userPrincipal);
+                assertEquals(userPrincipal, userAuthenticationInfo.getPrincipal());
+                assertEquals(password1, userAuthenticationInfo.getPassword());
+                assertEquals(salt1, userAuthenticationInfo.getSalt());
                 return;
             }
             fail("Failed while running testCreateUserWithExistedUserPrincipal");
@@ -98,29 +98,29 @@ public class DynamoUserProfileTableIntegrationTest {
 
     // This is same as testCreateUserHappyCase
     @Test
-    public void testGetUserAuthorizationInfoHappyCase() {}
+    public void testGetUserAuthenticationInfoHappyCase() {}
 
     @Test
-    public void testGetUserAuthorizationInfoWithInvalidRequest() 
+    public void testGetUserAuthenticationInfoWithInvalidRequest() 
             throws ItemNotFoundException, RepositoryServerException {
         try {
-            userProfileTable.getUserAuthorizationInfo(null);
+            userProfileTable.getUserAuthenticationInfo(null);
         } catch (ValidationException error) {
             return;
         } 
-        fail("Failed while running testGetUserAuthorizationInfoHappyCase");
+        fail("Failed while running testGetUserAuthenticationInfoHappyCase");
     }
 
     @Test
-    public void testGetUserAuthorizationInfoWithNonExistedUser() 
+    public void testGetUserAuthenticationInfoWithNonExistedUser() 
             throws ValidationException, RepositoryServerException {
         Long userPrincipal = SimpleFlakeKeyGenerator.generateKey();
         try {
-            userProfileTable.getUserAuthorizationInfo(userPrincipal);
+            userProfileTable.getUserAuthenticationInfo(userPrincipal);
         } catch (ItemNotFoundException error) {
             return;
         } 
-        fail("Failed while running testGetUserAuthorizationInfoWithNonExistedUser");
+        fail("Failed while running testGetUserAuthenticationInfoWithNonExistedUser");
     }
 
     @AfterClass

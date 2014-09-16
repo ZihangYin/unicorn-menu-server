@@ -12,6 +12,7 @@ import lombok.ToString;
 import org.joda.time.DateTime;
 
 import com.unicorn.rest.repository.exception.ValidationException;
+import com.unicorn.rest.server.filter.model.PrincipalType;
 import com.unicorn.rest.utils.TimeUtils;
 import com.unicorn.rest.utils.UUIDGenerator;
 
@@ -47,9 +48,10 @@ public class AuthorizationToken {
     @Getter @Nonnull private final DateTime issuedAt;
     @Getter @Nonnull private final DateTime expireAt;
     @Getter @Nonnull private final Long principal;
+    @Getter @Nonnull private final PrincipalType principalType;
 
-    public static AuthorizationToken generateAccessToken(@Nonnull Long principal) throws ValidationException {
-        return generateTokenBuilder().tokenType(AuthorizationTokenType.ACCESS_TOKEN).principal(principal).build();
+    public static AuthorizationToken generateAccessToken(@Nonnull Long principal, @Nonnull PrincipalType principalType) throws ValidationException {
+        return generateTokenBuilder().tokenType(AuthorizationTokenType.ACCESS_TOKEN).principal(principal).principalType(principalType).build();
     }
     
     public static AuthorizationTokenBuilder generateTokenBuilder() {
@@ -63,7 +65,7 @@ public class AuthorizationToken {
     public static AuthorizationToken updateTokenValue(AuthorizationToken currentAuthorizationToken) {
         return new AuthorizationToken(generateRandomToken(), currentAuthorizationToken.getTokenType(),
                 currentAuthorizationToken.getIssuedAt(), currentAuthorizationToken.getExpireAt(), 
-                currentAuthorizationToken.getPrincipal());
+                currentAuthorizationToken.getPrincipal(), currentAuthorizationToken.getPrincipalType());
     }
     
     /**
@@ -86,7 +88,8 @@ public class AuthorizationToken {
         private DateTime issuedAt = TimeUtils.getDateTimeNowInUTC();
         private DateTime expiredAt = issuedAt.plusHours(DEFAULT_EXPIRATION_IN_HOURS);
         private Long principal;
-
+        private PrincipalType principalType;
+        
         public AuthorizationTokenBuilder() {}
 
         private AuthorizationTokenBuilder token(String token) {
@@ -113,12 +116,17 @@ public class AuthorizationToken {
             this.principal = principal;
             return this;
         }
-
+        
+        public AuthorizationTokenBuilder principalType(PrincipalType principalType) {
+            this.principalType = principalType;
+            return this;
+        }
+        
         public AuthorizationToken build() throws ValidationException {
-            if (token == null || tokenType == null || issuedAt == null || expiredAt == null || principal == null) {
+            if (token == null || tokenType == null || issuedAt == null || expiredAt == null || principal == null || principalType == null) {
                 throw new ValidationException("Failed while attempting to build authorization token due to missing required parameters");
             }
-            return new AuthorizationToken(token, tokenType, issuedAt, expiredAt, principal);
+            return new AuthorizationToken(token, tokenType, issuedAt, expiredAt, principal, principalType);
         }
     }
 }

@@ -40,10 +40,11 @@ import com.unicorn.rest.repository.model.AuthorizationToken;
 import com.unicorn.rest.repository.model.AuthorizationToken.AuthorizationTokenType;
 import com.unicorn.rest.repository.model.DisplayName;
 import com.unicorn.rest.repository.model.Name;
-import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.server.GrizzlyServerTestBase;
 import com.unicorn.rest.server.filter.ActivitiesSecurityFilter;
-import com.unicorn.rest.server.filter.model.AuthorizationScheme;
+import com.unicorn.rest.server.filter.ActivitiesSecurityFilter.AuthorizationScheme;
+import com.unicorn.rest.server.filter.model.PrincipalType;
 import com.unicorn.rest.server.injector.TestRepositoryBinder;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
@@ -70,20 +71,20 @@ public class ActivitiesSecurityFilterTest extends GrizzlyServerTestBase {
         Mockito.reset(repositoryBinder.getMockedUserRepository());
     }
 
-    private PrincipalAuthorizationInfo createUserAuthorizationInfo(Long principal, String password) 
+    private PrincipalAuthenticationInfo createUserAuthorizationInfo(Long principal, String password) 
             throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
         ByteBuffer salt = AuthenticationSecretUtils.generateRandomSalt();
         ByteBuffer hashedPassword = AuthenticationSecretUtils.generateHashedSecretWithSalt(password, salt);
-        return PrincipalAuthorizationInfo.buildPrincipalAuthorizationInfo()
+        return PrincipalAuthenticationInfo.buildPrincipalAuthenticationInfo()
                 .principal(principal).password(hashedPassword).salt(salt).build();
     }
 
-    private void mockUserAuthorizationHappyCase(String loginName, String password, PrincipalAuthorizationInfo expectedUserAuthorizationInfo) 
+    private void mockUserAuthorizationHappyCase(String loginName, String password, PrincipalAuthenticationInfo expectedUserAuthorizationInfo) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
         Long userPrincipal = expectedUserAuthorizationInfo.getPrincipal();
         Mockito.doReturn(userPrincipal).when(mockedUserRepository).getPrincipalForLoginName(loginName);
-        Mockito.doReturn(expectedUserAuthorizationInfo).when(mockedUserRepository).getAuthorizationInfoForPrincipal(userPrincipal);
+        Mockito.doReturn(expectedUserAuthorizationInfo).when(mockedUserRepository).getAuthenticationInfoForPrincipal(userPrincipal);
     }
 
     private void mockTokenPersistencyHappyCase() 
@@ -171,11 +172,27 @@ public class ActivitiesSecurityFilterTest extends GrizzlyServerTestBase {
     }
 
     @Test
-    public void testHelloWorldActivitiesSayHelloWithAuthorizationHeaderHappyCase() throws Exception {
+    public void testHelloWorldActivitiesSayHelloWithAuthorizationHeaderForUserHappyCase() throws Exception {
         AuthorizationTokenType tokenType = AuthorizationTokenType.ACCESS_TOKEN;
         String token = UUIDGenerator.randomUUID().toString();
         Long principal = SimpleFlakeKeyGenerator.generateKey();
-        AuthorizationToken authorizationToken = AuthorizationToken.buildTokenBuilder(token).tokenType(tokenType).principal(principal).build();
+        AuthorizationToken authorizationToken = AuthorizationToken.buildTokenBuilder(token).tokenType(tokenType).principal(principal)
+                .principalType(PrincipalType.USER).build();
+
+        mockTokenFoundHappyCase(tokenType, token, authorizationToken);
+        Response response = webTarget.path("/v1/hello").request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, 
+                AuthorizationScheme.BEARER_AUTHENTICATION + Base64.encodeAsString(principal + ActivitiesSecurityFilter.AUTHORIZATION_CODE_SEPARATOR + token)).get();
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        assertEquals("Hello World", response.readEntity(String.class));
+    }
+    
+    @Test
+    public void testHelloWorldActivitiesSayHelloWithAuthorizationHeaderForCustomerHappyCase() throws Exception {
+        AuthorizationTokenType tokenType = AuthorizationTokenType.ACCESS_TOKEN;
+        String token = UUIDGenerator.randomUUID().toString();
+        Long principal = SimpleFlakeKeyGenerator.generateKey();
+        AuthorizationToken authorizationToken = AuthorizationToken.buildTokenBuilder(token).tokenType(tokenType).principal(principal)
+                .principalType(PrincipalType.CUSTOMER).build();
 
         mockTokenFoundHappyCase(tokenType, token, authorizationToken);
         Response response = webTarget.path("/v1/hello").request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, 

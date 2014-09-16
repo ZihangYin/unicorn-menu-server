@@ -38,6 +38,7 @@ import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.AuthorizationToken;
 import com.unicorn.rest.repository.model.AuthorizationToken.AuthorizationTokenType;
 import com.unicorn.rest.repository.table.AuthorizationTokenTable;
+import com.unicorn.rest.server.filter.model.PrincipalType;
 import com.unicorn.rest.utils.TimeUtils;
 
 @Service
@@ -49,6 +50,7 @@ public class DynamoAuthorizationTokenTable implements AuthorizationTokenTable {
     private static final String ISSUED_IN_EPOCH_KEY = "ISSUED_IN_EPOCH";
     private static final String EXPIRED_IN_EPOCH_KEY = "EXPIRED_IN_EPOCH";
     private static final String PRINCIPAL_KEY = "PRINCIPAL";
+    private static final String PRINCIPAL_TYPE_KEY = "PRINCIPAL_TYPE";
 
     private final DynamoDBDAO awsDynamoDBDAO = DynamoDBDAO.get();
 
@@ -81,11 +83,17 @@ public class DynamoAuthorizationTokenTable implements AuthorizationTokenTable {
                             tokenType, token));
         }
         Map<String, AttributeValue> tokenAttrs = getAuthorizationToken(tokenType, token);
-        return AuthorizationToken.buildTokenBuilder(token).tokenType(tokenType)
-                .issuedAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, ISSUED_IN_EPOCH_KEY)))
-                .expiredAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, EXPIRED_IN_EPOCH_KEY)))
-                .principal(DynamoAttributeValueUtils.getLongValue(tokenAttrs, PRINCIPAL_KEY))
-                .build();
+        try {
+            return AuthorizationToken.buildTokenBuilder(token).tokenType(tokenType)
+                    .issuedAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, ISSUED_IN_EPOCH_KEY)))
+                    .expiredAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, EXPIRED_IN_EPOCH_KEY)))
+                    .principal(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, PRINCIPAL_KEY))
+                    .principalType(Enum.valueOf(PrincipalType.class, DynamoAttributeValueUtils.getStringValue(tokenAttrs, PRINCIPAL_TYPE_KEY)))
+                    .build();
+        } catch (IllegalArgumentException | NullPointerException error) {
+            throw new RepositoryServerException(String.format("invalid value for principal_type attribute: %s.", 
+                    DynamoAttributeValueUtils.getStringValue(tokenAttrs, PRINCIPAL_TYPE_KEY)));
+        }
     }
 
     @Override
@@ -93,7 +101,7 @@ public class DynamoAuthorizationTokenTable implements AuthorizationTokenTable {
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (tokenType == null || token == null || principal == null) {
             throw new ValidationException(
-                    String.format("Expecting non-null request paramter for getToken, but received: authorizationToken=%s, authorizationToken=%s, principal=%s", 
+                    String.format("Expecting non-null request paramter for getTokenForPrincipal, but received: authorizationToken=%s, authorizationToken=%s, principal=%s", 
                             tokenType, token, principal));
         }
         Map<String, AttributeValue> tokenAttrs = getAuthorizationToken(tokenType, token);
@@ -102,12 +110,17 @@ public class DynamoAuthorizationTokenTable implements AuthorizationTokenTable {
             LOG.info("The token {} with token type {} for principal {} in getTokenForPrincipal request does not exist in the table.", token, tokenType.name(), principal);
             throw new ItemNotFoundException();
         }
-        
-        return AuthorizationToken.buildTokenBuilder(token).tokenType(tokenType)
-                .issuedAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, ISSUED_IN_EPOCH_KEY)))
-                .expiredAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, EXPIRED_IN_EPOCH_KEY)))
-                .principal(principal)
-                .build();
+        try {
+            return AuthorizationToken.buildTokenBuilder(token).tokenType(tokenType)
+                    .issuedAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, ISSUED_IN_EPOCH_KEY)))
+                    .expiredAt(TimeUtils.convertToDateTimeInUTCWithEpochTime(DynamoAttributeValueUtils.getRequiredLongValue(tokenAttrs, EXPIRED_IN_EPOCH_KEY)))
+                    .principal(principal)
+                    .principalType(Enum.valueOf(PrincipalType.class, DynamoAttributeValueUtils.getStringValue(tokenAttrs, PRINCIPAL_TYPE_KEY)))
+                    .build();
+        } catch (IllegalArgumentException | NullPointerException error) {
+            throw new RepositoryServerException(String.format("invalid value for principal_type attribute: %s.", 
+                    DynamoAttributeValueUtils.getStringValue(tokenAttrs, PRINCIPAL_TYPE_KEY)));
+        }
     }
 
     @Override
@@ -151,6 +164,7 @@ public class DynamoAuthorizationTokenTable implements AuthorizationTokenTable {
         item.put(ISSUED_IN_EPOCH_KEY, DynamoAttributeValueUtils.numberAttrValue(authorizationToken.getIssuedAt().getMillis()));
         item.put(EXPIRED_IN_EPOCH_KEY, DynamoAttributeValueUtils.numberAttrValue(authorizationToken.getExpireAt().getMillis()));
         item.put(PRINCIPAL_KEY, DynamoAttributeValueUtils.numberAttrValue(authorizationToken.getPrincipal()));
+        item.put(PRINCIPAL_TYPE_KEY, DynamoAttributeValueUtils.stringAttrValue(authorizationToken.getPrincipalType().name()));
 
         Map<String, ExpectedAttributeValue> expected = new HashMap<>();
         expected.put(AUTHORIZATION_TOKEN_TYPE_KEY, DynamoAttributeValueUtils.expectEmpty());
@@ -184,7 +198,7 @@ public class DynamoAuthorizationTokenTable implements AuthorizationTokenTable {
         AttributeValue principalAttrValue = DynamoAttributeValueUtils.numberAttrValue(principal);
         expectedValues.put(PRINCIPAL_KEY, DynamoAttributeValueUtils.expectEqual(principalAttrValue));
         expectedValues.put(EXPIRED_IN_EPOCH_KEY, DynamoAttributeValueUtils.expectCompare(ComparisonOperator.GT, now));
-        
+
         UpdateItemRequest updateItemRequest = new UpdateItemRequest().withTableName(AUTHORIZATION_TOKEN_TABLE_NAME)
                 .withKey(key).withAttributeUpdates(updateItems).withExpected(expectedValues);
 

@@ -37,7 +37,7 @@ import com.unicorn.rest.repository.impl.AuthorizationTokenRepositoryImpl;
 import com.unicorn.rest.repository.impl.CustomerRepositoryImpl;
 import com.unicorn.rest.repository.impl.UserRepositoryImpl;
 import com.unicorn.rest.repository.model.AuthorizationToken.AuthorizationTokenType;
-import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.server.GrizzlyServerTestBase;
 import com.unicorn.rest.server.injector.TestRepositoryBinder;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
@@ -65,31 +65,31 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         Mockito.reset(repositoryBinder.getMockedCustomerRepository());
     }
 
-    private PrincipalAuthorizationInfo createAuthorizationInfo(Long principal, String password) 
+    private PrincipalAuthenticationInfo createAuthenticationInfo(Long principal, String password) 
             throws ValidationException, UnsupportedEncodingException, NoSuchAlgorithmException {
         ByteBuffer salt = AuthenticationSecretUtils.generateRandomSalt();
         ByteBuffer hashedPassword = AuthenticationSecretUtils.generateHashedSecretWithSalt(password, salt);
-        return PrincipalAuthorizationInfo.buildPrincipalAuthorizationInfo()
+        return PrincipalAuthenticationInfo.buildPrincipalAuthenticationInfo()
                 .principal(principal).password(hashedPassword).salt(salt).build();
     }
     
-    private void mockUserAuthorizationHappyCase(String loginName, String password, PrincipalAuthorizationInfo expectedUserAuthorizationInfo) 
+    private void mockUserAuthenticationHappyCase(String loginName, String password, PrincipalAuthenticationInfo expectedUserAuthenticationInfo) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
-        Long principal = expectedUserAuthorizationInfo.getPrincipal();
+        Long principal = expectedUserAuthenticationInfo.getPrincipal();
         Mockito.doReturn(principal).when(mockedUserRepository).getPrincipalForLoginName(loginName);
-        Mockito.doReturn(expectedUserAuthorizationInfo).when(mockedUserRepository).getAuthorizationInfoForPrincipal(principal);
+        Mockito.doReturn(expectedUserAuthenticationInfo).when(mockedUserRepository).getAuthenticationInfoForPrincipal(principal);
     }
 
-    private void mockCustomerAuthorizationHappyCase(String loginName, String credentail, PrincipalAuthorizationInfo expectedCustomerAuthorizationInfo) 
+    private void mockCustomerAuthenticationHappyCase(String loginName, String credentail, PrincipalAuthenticationInfo expectedCustomerAuthenticationInfo) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         CustomerRepositoryImpl mockedCustomerRepository = repositoryBinder.getMockedCustomerRepository();
-        Long principal = expectedCustomerAuthorizationInfo.getPrincipal();
+        Long principal = expectedCustomerAuthenticationInfo.getPrincipal();
         Mockito.doReturn(principal).when(mockedCustomerRepository).getPrincipalForLoginName(loginName);
-        Mockito.doReturn(expectedCustomerAuthorizationInfo).when(mockedCustomerRepository).getAuthorizationInfoForPrincipal(principal);
+        Mockito.doReturn(expectedCustomerAuthenticationInfo).when(mockedCustomerRepository).getAuthenticationInfoForPrincipal(principal);
     }
     
-    private void mockUserAuthorizationNoUser(String loginName, String password) 
+    private void mockUserAuthenticationNoUser(String loginName, String password) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         UserRepositoryImpl mockedUserRepository = repositoryBinder.getMockedUserRepository();
         ItemNotFoundException itemNotFound = new ItemNotFoundException();
@@ -151,7 +151,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         String password = "1a2b3c";
         Long principal = SimpleFlakeKeyGenerator.generateKey();
         
-        mockUserAuthorizationHappyCase(loginName, password, createAuthorizationInfo(principal, password));
+        mockUserAuthenticationHappyCase(loginName, password, createAuthenticationInfo(principal, password));
         mockTokenPersistencyHappyCase();
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
                 .queryParam(GenerateTokenRequest.PASSWORD, password)
@@ -174,7 +174,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         String credential = "1a2b3c";
         Long principal = SimpleFlakeKeyGenerator.generateKey();
         
-        mockCustomerAuthorizationHappyCase(loginName, credential, createAuthorizationInfo(principal, credential));
+        mockCustomerAuthenticationHappyCase(loginName, credential, createAuthenticationInfo(principal, credential));
         mockTokenPersistencyHappyCase();
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
                 .queryParam(GenerateTokenRequest.CREDENTIAL, credential)
@@ -198,7 +198,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         String password = "1a2b3c";
         Long principal = SimpleFlakeKeyGenerator.generateKey();
         
-        mockUserAuthorizationHappyCase(loginName, password, createAuthorizationInfo(principal, password));
+        mockUserAuthenticationHappyCase(loginName, password, createAuthenticationInfo(principal, password));
         mockTokenPersistencyDuplicateTokenOnce();
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
                 .queryParam(GenerateTokenRequest.PASSWORD, password)
@@ -220,7 +220,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         String credential = "1a2b3c";
         Long principal = SimpleFlakeKeyGenerator.generateKey();
         
-        mockCustomerAuthorizationHappyCase(loginName, credential, createAuthorizationInfo(principal, credential));
+        mockCustomerAuthenticationHappyCase(loginName, credential, createAuthenticationInfo(principal, credential));
         mockTokenPersistencyDuplicateTokenOnce();
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
                 .queryParam(GenerateTokenRequest.CREDENTIAL, credential)
@@ -371,7 +371,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
     public void testGenerateTokenForUserPasswordUserDoesNotExist() throws Exception {
         String loginName = "login_name";
         String password = "1a2b3c";
-        mockUserAuthorizationNoUser(loginName, password);
+        mockUserAuthenticationNoUser(loginName, password);
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
                 .queryParam(GenerateTokenRequest.PASSWORD, password)
                 .queryParam(GenerateTokenRequest.GRANT_TYPE, GrantType.USER_PASSWORD.toString()).request(MediaType.APPLICATION_JSON).get();
@@ -391,7 +391,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
         String loginName = "login_name";
         String password = "1a2b3c";
         
-        mockUserAuthorizationHappyCase(loginName, password, createAuthorizationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
+        mockUserAuthenticationHappyCase(loginName, password, createAuthenticationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
         String wrongPassword = "wrong_password";
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
                 .queryParam(GenerateTokenRequest.PASSWORD, wrongPassword)
@@ -528,7 +528,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
         String loginName = "login_name";
         String password = "1a2b3c";
-        mockUserAuthorizationHappyCase(loginName, password, createAuthorizationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
+        mockUserAuthenticationHappyCase(loginName, password, createAuthenticationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
         mockTokenPersistencyDuplicateToken();
 
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)
@@ -550,7 +550,7 @@ public class TokenActivitiesTest extends GrizzlyServerTestBase {
 
         String loginName = "login_name";
         String password = "1a2b3c";
-        mockUserAuthorizationHappyCase(loginName, password, createAuthorizationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
+        mockUserAuthenticationHappyCase(loginName, password, createAuthenticationInfo(SimpleFlakeKeyGenerator.generateKey(), password));
         mockTokenPersistencyServerError();
 
         Response response = webTarget.queryParam(GenerateTokenRequest.LOGIN_NAME, loginName)

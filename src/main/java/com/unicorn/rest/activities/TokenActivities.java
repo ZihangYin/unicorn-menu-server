@@ -29,7 +29,7 @@ import com.unicorn.rest.activity.model.RevokeTokenRequest;
 import com.unicorn.rest.activity.model.GenerateTokenRequest;
 import com.unicorn.rest.activity.model.TokenResponse;
 import com.unicorn.rest.activity.model.GenerateTokenRequest.GrantType;
-import com.unicorn.rest.repository.AuthorizationRepository;
+import com.unicorn.rest.repository.AuthenticationRepository;
 import com.unicorn.rest.repository.AuthorizationTokenRepository;
 import com.unicorn.rest.repository.CustomerRepository;
 import com.unicorn.rest.repository.UserRepository;
@@ -39,7 +39,8 @@ import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.AuthorizationToken;
 import com.unicorn.rest.repository.model.AuthorizationToken.AuthorizationTokenType;
-import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
+import com.unicorn.rest.server.filter.model.PrincipalType;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 
 @Path("/v1/tokens")
@@ -67,23 +68,26 @@ public class TokenActivities {
             throws BadRequestException, InternalServerErrorException {
         try {
             GenerateTokenRequest tokenRequest = GenerateTokenRequest.validateGenerateTokenRequest(uriInfo.getQueryParameters());
-           
+
             GrantType grantType = tokenRequest.getGrantType();
             AuthorizationToken accessToken = null;
             switch (grantType) {
             case USER_PASSWORD:
-                accessToken =  generateToken(tokenRequest.getLoginName(), tokenRequest.getPassword(), 
+                Long userPrincipal = authenticate(tokenRequest.getLoginName(), tokenRequest.getPassword(),
                         userRepository, TokenErrDescFormatter.INVALID_GRANT_USER_PASSWORD);
+                accessToken = AuthorizationToken.generateAccessToken(userPrincipal, PrincipalType.USER);
                 break;
             case CUSTOMER_CREDENTIAL:
-                accessToken =  generateToken(tokenRequest.getLoginName(), tokenRequest.getCredential(), 
+                Long customerPrincipal = authenticate(tokenRequest.getLoginName(), tokenRequest.getCredential(), 
                         customerrRepository, TokenErrDescFormatter.INVALID_GRANT_CUSTOMER_CREDENTIAL);
+                accessToken = AuthorizationToken.generateAccessToken(customerPrincipal, PrincipalType.CUSTOMER);;
                 break;
             default:
                 throw new BadTokenRequestException(TokenErrCode.UNSUPPORTED_GRANT_TYPE,  
                         String.format(TokenErrDescFormatter.UNSUPPORTED_GRANT_TYPE.toString(), grantType));
             }
             TokenResponse tokenResponse = persistAndBuildTokenResponse(accessToken);
+
             return Response.status(Status.OK).entity(tokenResponse).build();
 
         } catch (ValidationException badRequest) {
@@ -107,7 +111,7 @@ public class TokenActivities {
             AuthorizationTokenType tokenType = revokeTokenRequest.getTokenType();
             String token = revokeTokenRequest.getToken();
             Long principal = revokeTokenRequest.getPrincipal();
-            
+
             try {
                 tokenRepository.revokeToken(tokenType, token, principal);
 
@@ -130,26 +134,24 @@ public class TokenActivities {
         }
     }
 
-    private @Nonnull AuthorizationToken generateToken(@Nonnull String loginName, String clientSecret, 
-            AuthorizationRepository authorizationRepository, TokenErrDescFormatter tokenErrDescFormatter) 
-            throws BadTokenRequestException, ValidationException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
+    private Long authenticate(@Nonnull String loginName, @Nonnull String clientSecret,  
+            @Nonnull AuthenticationRepository authorizationRepository, @Nonnull TokenErrDescFormatter tokenErrDescFormatter) 
+                    throws BadTokenRequestException, ValidationException, RepositoryServerException, UnsupportedEncodingException, NoSuchAlgorithmException {
         try {
             Long principal = authorizationRepository.getPrincipalForLoginName(loginName);
-            PrincipalAuthorizationInfo authorizationInfo = authorizationRepository.getAuthorizationInfoForPrincipal(principal);
+            PrincipalAuthenticationInfo authorizationInfo = authorizationRepository.getAuthenticationInfoForPrincipal(principal);
 
             if (AuthenticationSecretUtils.authenticateSecret(clientSecret, authorizationInfo.getPassword(), authorizationInfo.getSalt())) {
-                return AuthorizationToken.generateTokenBuilder().tokenType(AuthorizationTokenType.ACCESS_TOKEN).principal(principal).build();
+                return principal;
+            } else {
+                throw new BadTokenRequestException(TokenErrCode.INVALID_GRANT,  
+                        String.format(tokenErrDescFormatter.toString(), loginName));
             }
-
-            throw new BadTokenRequestException(TokenErrCode.INVALID_GRANT,  
-                    String.format(tokenErrDescFormatter.toString(), loginName));
-
         }  catch (ItemNotFoundException error) {
             throw new BadTokenRequestException(TokenErrCode.INVALID_GRANT,  
                     String.format(tokenErrDescFormatter.toString(), loginName));
         }
     }
-    
 
     private @Nonnull TokenResponse persistAndBuildTokenResponse(@Nullable AuthorizationToken accessToken) throws ValidationException, RepositoryServerException {
         try {

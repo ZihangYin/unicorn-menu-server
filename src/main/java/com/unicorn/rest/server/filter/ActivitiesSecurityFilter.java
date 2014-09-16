@@ -26,10 +26,11 @@ import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.AuthorizationToken.AuthorizationTokenType;
-import com.unicorn.rest.server.filter.model.AuthorizationScheme;
+import com.unicorn.rest.server.filter.model.CustomerPrincipal;
+import com.unicorn.rest.server.filter.model.PrincipalType;
 import com.unicorn.rest.server.filter.model.SubjectPrincipal;
-import com.unicorn.rest.server.filter.model.SubjectSecurityContext;
-import com.unicorn.rest.server.filter.model.UserSubjectPrincipal;
+import com.unicorn.rest.server.filter.model.PrincipalSecurityContext;
+import com.unicorn.rest.server.filter.model.UserPrincipal;
 
 @Priority(Priorities.AUTHENTICATION)
 public class ActivitiesSecurityFilter implements ContainerRequestFilter {
@@ -39,6 +40,23 @@ public class ActivitiesSecurityFilter implements ContainerRequestFilter {
     
     @Inject
     private AuthorizationTokenRepository tokenRepository;
+    
+    public enum AuthorizationScheme {
+        
+        BASIC_AUTHENTICATION("Basic "),
+        BEARER_AUTHENTICATION("Bearer ");
+
+        private String authSchemePrefix;
+
+        private AuthorizationScheme(String authSchemePrefix) {
+            this.authSchemePrefix = authSchemePrefix;
+        }
+
+        @Override
+        public String toString() {
+            return this.authSchemePrefix;
+        }
+    }
 
     @Override
     public void filter(ContainerRequestContext requestContext)
@@ -47,7 +65,7 @@ public class ActivitiesSecurityFilter implements ContainerRequestFilter {
             String authorizationHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
             String[] authorizationCode = parseAuthorizationHeader(authorizationHeader);
             SubjectPrincipal subjectPrincipal = authenticate(authorizationCode);
-            requestContext.setSecurityContext(new SubjectSecurityContext(subjectPrincipal));
+            requestContext.setSecurityContext(new PrincipalSecurityContext(subjectPrincipal));
             
         } catch (MissingAuthorizationException | UnrecognizedIdentityException | UnrecognizedAuthorizationSchemeException error) {
             LOG.info(String.format("Failed while attempting to fulfill authorization due to %s: ", BadRequestException.BAD_REQUEST), error);
@@ -83,9 +101,15 @@ public class ActivitiesSecurityFilter implements ContainerRequestFilter {
             Long principal = Long.parseLong(authorizationCode[0]);
             String token = authorizationCode[1];
             
-            tokenRepository.findToken(AuthorizationTokenType.ACCESS_TOKEN, token, principal);
-            return new UserSubjectPrincipal(principal, AuthorizationScheme.BEARER_AUTHENTICATION);
-
+            PrincipalType principalType = tokenRepository.findToken(AuthorizationTokenType.ACCESS_TOKEN, token, principal).getPrincipalType();
+            
+            if (PrincipalType.CUSTOMER.equals(principalType)) {
+                return new CustomerPrincipal(principal, AuthorizationScheme.BEARER_AUTHENTICATION);
+            } else if (PrincipalType.USER.equals(principalType)) { 
+                return new UserPrincipal(principal, AuthorizationScheme.BEARER_AUTHENTICATION);
+            } 
+            throw new UnrecognizedIdentityException();
+            
         } catch (ValidationException error) {
             throw new MissingAuthorizationException();
         } catch (NumberFormatException | ItemNotFoundException error) {

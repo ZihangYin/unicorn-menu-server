@@ -2,12 +2,15 @@ package com.unicorn.rest.server.filter.model;
 
 import javax.annotation.Nonnull;
 
-public class UserSubjectPrincipal implements SubjectPrincipal {
+import com.unicorn.rest.server.filter.ActivitiesSecurityFilter.AuthorizationScheme;
+
+public class UserPrincipal implements SubjectPrincipal {
 
     private final @Nonnull Long userId;
+    private final @Nonnull PrincipalType principalType = PrincipalType.USER;
     private final @Nonnull AuthorizationScheme authenticationScheme;
     
-    public UserSubjectPrincipal(@Nonnull Long userId, @Nonnull AuthorizationScheme authenticationScheme) {
+    public UserPrincipal(@Nonnull Long userId, @Nonnull AuthorizationScheme authenticationScheme) {
         this.userId = userId;
         this.authenticationScheme = authenticationScheme;
     }
@@ -15,6 +18,11 @@ public class UserSubjectPrincipal implements SubjectPrincipal {
     @Override
     public Long getPrincipal() {
         return this.userId;
+    }
+    
+    @Override
+    public PrincipalType getPrincipalType() {
+        return principalType;
     }
     
     @Override

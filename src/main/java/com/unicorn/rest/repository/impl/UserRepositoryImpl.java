@@ -19,7 +19,7 @@ import com.unicorn.rest.repository.model.DisplayName;
 import com.unicorn.rest.repository.model.EmailAddress;
 import com.unicorn.rest.repository.model.MobilePhone;
 import com.unicorn.rest.repository.model.Name;
-import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.repository.table.EmailAddressToPrincipalTable;
 import com.unicorn.rest.repository.table.MobilePhoneToPrincipalTable;
 import com.unicorn.rest.repository.table.NameToPrincipalTable;
@@ -67,9 +67,9 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public PrincipalAuthorizationInfo getAuthorizationInfoForPrincipal(Long userPrincipal) 
+    public PrincipalAuthenticationInfo getAuthenticationInfoForPrincipal(Long userPrincipal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
-        return userProfileTable.getUserAuthorizationInfo(userPrincipal);
+        return userProfileTable.getUserAuthenticationInfo(userPrincipal);
     }
 
     @Override

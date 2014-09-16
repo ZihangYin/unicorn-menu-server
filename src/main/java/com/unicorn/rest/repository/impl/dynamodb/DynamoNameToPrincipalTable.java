@@ -73,18 +73,18 @@ public class DynamoNameToPrincipalTable implements NameToPrincipalTable {
         private final Long activateTime;
         @Nonnull private final Long deactivateTime;
 
-        public NameToPrincipalItem(@Nonnull Map<String, AttributeValue> attributes) {
-            this.name = DynamoAttributeValueUtils.getRequiredStringValue(attributes, NAME_KEY);
-            this.principal = DynamoAttributeValueUtils.getRequiredLongValue(attributes, PRINCIPAL_KEY);    
-            this.activateTime = DynamoAttributeValueUtils.getRequiredLongValue(attributes, ACTIVATE_IN_EPOCH_KEY);
-            this.deactivateTime = DynamoAttributeValueUtils.getRequiredLongValue(attributes, DEACTIVATE_IN_EPOCH_KEY);
-        }
-        
         public NameToPrincipalItem(@Nonnull String name, @Nonnull Long principal, @Nullable Long activateTime, @Nonnull Long deactivateTime) {
             this.name = name;
             this.principal = principal;
             this.activateTime = activateTime;
             this.deactivateTime = deactivateTime;
+        }
+        
+        public static NameToPrincipalItem buildNameToPrincipalItem(@Nonnull Map<String, AttributeValue> attributes) throws RepositoryServerException {
+            return new NameToPrincipalItem(DynamoAttributeValueUtils.getRequiredStringValue(attributes, NAME_KEY), 
+                    DynamoAttributeValueUtils.getRequiredLongValue(attributes, PRINCIPAL_KEY),
+                    DynamoAttributeValueUtils.getRequiredLongValue(attributes, ACTIVATE_IN_EPOCH_KEY),
+                    DynamoAttributeValueUtils.getRequiredLongValue(attributes, DEACTIVATE_IN_EPOCH_KEY));
         }
     }
 
@@ -299,7 +299,7 @@ public class DynamoNameToPrincipalTable implements NameToPrincipalTable {
             throw new ItemNotFoundException();
         }
 
-        NameToPrincipalItem nameToPrincipalItem = new NameToPrincipalItem(queryResult.getItems().get(0));
+        NameToPrincipalItem nameToPrincipalItem = NameToPrincipalItem.buildNameToPrincipalItem(queryResult.getItems().get(0));
         if (!checkStaleness) {
             return nameToPrincipalItem;
         }

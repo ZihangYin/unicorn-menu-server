@@ -59,7 +59,7 @@ public class DynamoMobilePhoneToPrincipalTable implements MobilePhoneToPrincipal
 
     private final DynamoDBDAO awsDynamoDBDAO = DynamoDBDAO.get();
 
-    private MobilePhone buildMobilePhone(@Nonnull Map<String, AttributeValue> attributes) {
+    private MobilePhone buildMobilePhone(@Nonnull Map<String, AttributeValue> attributes) throws RepositoryServerException {
         Integer countryCode = DynamoAttributeValueUtils.getRequiredIntegerValue(attributes, COUNTRY_CODE_KEY);
         Long phoneNumber = DynamoAttributeValueUtils.getRequiredLongValue(attributes, PHONE_NUMBER_KEY);
         return new MobilePhone(countryCode, phoneNumber);

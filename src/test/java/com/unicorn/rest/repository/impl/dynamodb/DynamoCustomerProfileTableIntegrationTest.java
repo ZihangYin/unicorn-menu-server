@@ -18,7 +18,7 @@ import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.impl.dynamodb.DynamoCustomerProfileTable;
 import com.unicorn.rest.repository.model.DisplayName;
-import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.utils.AuthenticationSecretUtils;
 import com.unicorn.rest.utils.SimpleFlakeKeyGenerator;
 
@@ -43,10 +43,10 @@ public class DynamoCustomerProfileTableIntegrationTest {
 
         try {
             customerProfileTable.createCustomer(customerPrincipal, customerDisplayName, password, salt);
-            PrincipalAuthorizationInfo customerAuthorizationInfo = customerProfileTable.getCustomerAuthorizationInfo(customerPrincipal);
-            assertEquals(customerPrincipal, customerAuthorizationInfo.getPrincipal());
-            assertEquals(password, customerAuthorizationInfo.getPassword());
-            assertEquals(salt, customerAuthorizationInfo.getSalt());
+            PrincipalAuthenticationInfo customerAuthenticationInfo = customerProfileTable.getCustomerAuthenticationInfo(customerPrincipal);
+            assertEquals(customerPrincipal, customerAuthenticationInfo.getPrincipal());
+            assertEquals(password, customerAuthenticationInfo.getPassword());
+            assertEquals(salt, customerAuthenticationInfo.getSalt());
 
         } finally {
             try {
@@ -81,10 +81,10 @@ public class DynamoCustomerProfileTableIntegrationTest {
             try {
                 customerProfileTable.createCustomer(customerPrincipal, customerDisplayName2, password2, salt2);
             } catch(DuplicateKeyException error) {
-                PrincipalAuthorizationInfo customerAuthorizationInfo = customerProfileTable.getCustomerAuthorizationInfo(customerPrincipal);
-                assertEquals(customerPrincipal, customerAuthorizationInfo.getPrincipal());
-                assertEquals(password1, customerAuthorizationInfo.getPassword());
-                assertEquals(salt1, customerAuthorizationInfo.getSalt());
+                PrincipalAuthenticationInfo customerAuthenticationInfo = customerProfileTable.getCustomerAuthenticationInfo(customerPrincipal);
+                assertEquals(customerPrincipal, customerAuthenticationInfo.getPrincipal());
+                assertEquals(password1, customerAuthenticationInfo.getPassword());
+                assertEquals(salt1, customerAuthenticationInfo.getSalt());
                 return;
             }
             fail("Failed while running testCreateCustomerWithExistedCustomerPrincipal");
@@ -98,29 +98,29 @@ public class DynamoCustomerProfileTableIntegrationTest {
 
     // This is same as testCreateCustomerHappyCase
     @Test
-    public void testGetCustomerAuthorizationInfoHappyCase() {}
+    public void testGetCustomerAuthenticationInfoHappyCase() {}
 
     @Test
-    public void testGetCustomerAuthorizationInfoWithInvalidRequest() 
+    public void testGetCustomerAuthenticationInfoWithInvalidRequest() 
             throws ItemNotFoundException, RepositoryServerException {
         try {
-            customerProfileTable.getCustomerAuthorizationInfo(null);
+            customerProfileTable.getCustomerAuthenticationInfo(null);
         } catch (ValidationException error) {
             return;
         } 
-        fail("Failed while running testGetCustomerAuthorizationInfoHappyCase");
+        fail("Failed while running testGetCustomerAuthenticationInfoHappyCase");
     }
 
     @Test
-    public void testGetCustomerAuthorizationInfoWithNonExistedCustomer() 
+    public void testGetCustomerAuthenticationInfoWithNonExistedCustomer() 
             throws ValidationException, RepositoryServerException {
         Long customerPrincipal = SimpleFlakeKeyGenerator.generateKey();
         try {
-            customerProfileTable.getCustomerAuthorizationInfo(customerPrincipal);
+            customerProfileTable.getCustomerAuthenticationInfo(customerPrincipal);
         } catch (ItemNotFoundException error) {
             return;
         } 
-        fail("Failed while running testGetCustomerAuthorizationInfoWithNonExistedCustomer");
+        fail("Failed while running testGetCustomerAuthenticationInfoWithNonExistedCustomer");
     }
 
     @AfterClass

@@ -37,7 +37,7 @@ import com.unicorn.rest.repository.exception.RepositoryClientException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
 import com.unicorn.rest.repository.model.DisplayName;
-import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.repository.table.UserProfileTable;
 
 public class DynamoUserProfileTable implements UserProfileTable {
@@ -65,14 +65,14 @@ public class DynamoUserProfileTable implements UserProfileTable {
     }
 
     @Override
-    public @Nonnull PrincipalAuthorizationInfo getUserAuthorizationInfo(@Nullable Long userPrincipal) 
+    public @Nonnull PrincipalAuthenticationInfo getUserAuthenticationInfo(@Nullable Long userPrincipal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException {
         if (userPrincipal == null) {
-            throw new ValidationException("Expecting non-null request paramter for getUserAuthorizationInfo, but received: userPrincipal=null.");
+            throw new ValidationException("Expecting non-null request paramter for getUserAuthenticationInfo, but received: userPrincipal=null.");
         }
 
         Map<String, AttributeValue> userAttrs = getUserInfo(userPrincipal, PASSWORD_KEY, SALT_KEY);
-        return PrincipalAuthorizationInfo.buildPrincipalAuthorizationInfo()
+        return PrincipalAuthenticationInfo.buildPrincipalAuthenticationInfo()
                 .principal(userPrincipal).password(DynamoAttributeValueUtils.getRequiredByteBufferValue(userAttrs, PASSWORD_KEY))
                 .salt(DynamoAttributeValueUtils.getRequiredByteBufferValue(userAttrs, SALT_KEY))
                 .build();

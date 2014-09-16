@@ -17,19 +17,23 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
+import com.unicorn.rest.repository.exception.RepositoryServerException;
 
 public class DynamoAttributeValueUtils {
     
-    public static @Nonnull IllegalArgumentException wrongAttrTypeException(@Nonnull String expectedType, @Nonnull AttributeValue attrValue) {
-        throw new IllegalArgumentException("expected: " + expectedType + ", but got: " + attrValue);
+    public static @Nonnull RepositoryServerException wrongAttrTypeException(@Nonnull String expectedType, @Nonnull AttributeValue attrValue) 
+            throws RepositoryServerException {
+        throw new RepositoryServerException(String.format("expected: %s, but got: %s.", expectedType, attrValue));
     }
 
-    public static @Nonnull IllegalArgumentException invalidAttrValueException(@Nonnull String attrName, @Nonnull IllegalArgumentException error) {
-        throw new IllegalArgumentException("invalid value for " + attrName + " attribute: " + error.getMessage(), error);
+    public static @Nonnull RepositoryServerException invalidAttrValueException(@Nonnull String attrName, @Nonnull IllegalArgumentException error) 
+            throws RepositoryServerException {
+        throw new RepositoryServerException(String.format("invalid value for %s attribute %s." + attrName, error.getMessage()), error);
     }
 
-    public static @Nonnull IllegalArgumentException missingRequiredAttrException(@Nonnull String attrName) {
-        throw new IllegalArgumentException("missing required attribute: " + attrName);
+    public static @Nonnull RepositoryServerException missingRequiredAttrException(@Nonnull String attrName) 
+            throws RepositoryServerException {
+        throw new RepositoryServerException(String.format("missing required attribute: %s.", attrName));
     }
 
     public static @Nonnull AttributeValueUpdate delete() {
@@ -60,7 +64,7 @@ public class DynamoAttributeValueUtils {
         return new ExpectedAttributeValue().withAttributeValueList(attrValues).withComparisonOperator(comparisonOperator);
     }
 
-    public static @Nullable String asString(@Nullable AttributeValue attrValue) throws IllegalArgumentException {
+    public static @Nullable String asString(@Nullable AttributeValue attrValue) throws RepositoryServerException {
         if (attrValue == null) {
             return null;
         } 
@@ -71,7 +75,7 @@ public class DynamoAttributeValueUtils {
         return strValue;
     }
     
-    public static @Nullable List<String> asStringSet(@Nullable AttributeValue attrValue) throws IllegalArgumentException {
+    public static @Nullable List<String> asStringSet(@Nullable AttributeValue attrValue) throws RepositoryServerException {
         if (attrValue == null) {
             return null;
         } 
@@ -82,7 +86,7 @@ public class DynamoAttributeValueUtils {
         return strValues;
     }
 
-    public static @Nullable Double asDouble(@Nullable AttributeValue attrValue) throws IllegalArgumentException {
+    public static @Nullable Double asDouble(@Nullable AttributeValue attrValue) throws RepositoryServerException {
         String numberValue = asNumber(attrValue);
         if (numberValue == null) {
             return null;
@@ -94,7 +98,7 @@ public class DynamoAttributeValueUtils {
         }
     }
 
-    public static @Nullable Long asLong(@Nullable AttributeValue attrValue) throws IllegalArgumentException {
+    public static @Nullable Long asLong(@Nullable AttributeValue attrValue) throws RepositoryServerException {
         String numberValue = asNumber(attrValue);
         if (numberValue == null) {
             return null;
@@ -106,7 +110,7 @@ public class DynamoAttributeValueUtils {
         }
     }
 
-    public static @Nullable Integer asInteger(@Nullable AttributeValue attrValue) throws IllegalArgumentException {
+    public static @Nullable Integer asInteger(@Nullable AttributeValue attrValue) throws RepositoryServerException {
         String numberValue = asNumber(attrValue);
         if (numberValue == null) {
             return null;
@@ -118,7 +122,7 @@ public class DynamoAttributeValueUtils {
         }
     }
 
-    private static @Nullable String asNumber(@Nullable AttributeValue attrValue) throws IllegalArgumentException {
+    private static @Nullable String asNumber(@Nullable AttributeValue attrValue) throws RepositoryServerException {
         if (attrValue == null) {
             return null;
         } 
@@ -129,7 +133,7 @@ public class DynamoAttributeValueUtils {
         return numberValue;
     }
 
-    public static @Nullable ByteBuffer asByteBuffer(@Nullable AttributeValue attrValue) throws IllegalArgumentException {
+    public static @Nullable ByteBuffer asByteBuffer(@Nullable AttributeValue attrValue) throws RepositoryServerException {
         if (attrValue == null) {
             return null;
         } 
@@ -140,7 +144,7 @@ public class DynamoAttributeValueUtils {
         return byteBufferValue;
     }
     
-    public static @Nullable DateTime asDateTime(@Nullable AttributeValue attrValue, @Nonnull DateTimeFormatter dateTimeFormatter) throws IllegalArgumentException {
+    public static @Nullable DateTime asDateTime(@Nullable AttributeValue attrValue, @Nonnull DateTimeFormatter dateTimeFormatter) throws RepositoryServerException {
         if (attrValue == null) {
             return null;
         } 
@@ -152,7 +156,7 @@ public class DynamoAttributeValueUtils {
         }
     }
 
-    public static @Nullable String getStringValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nullable String getStringValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         try { 
             return asString(attributes.get(attrName));
         } catch (IllegalArgumentException error) {
@@ -160,7 +164,7 @@ public class DynamoAttributeValueUtils {
         }
     }
     
-    public static @Nullable List<String> getStringSetValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nullable List<String> getStringSetValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         try { 
             return asStringSet(attributes.get(attrName));
         } catch (IllegalArgumentException error) {
@@ -168,7 +172,7 @@ public class DynamoAttributeValueUtils {
         }
     }
 
-    public static @Nullable Double getDoubleValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nullable Double getDoubleValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         try { 
             return asDouble(attributes.get(attrName));
         } catch (IllegalArgumentException error) {
@@ -176,7 +180,7 @@ public class DynamoAttributeValueUtils {
         }
     }
 
-    public static @Nullable Long getLongValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nullable Long getLongValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         try { 
             return asLong(attributes.get(attrName));
         } catch (IllegalArgumentException error) {
@@ -184,7 +188,7 @@ public class DynamoAttributeValueUtils {
         }
     }
 
-    public static @Nullable Integer getIntegerValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nullable Integer getIntegerValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         try { 
             return asInteger(attributes.get(attrName));
         } catch (IllegalArgumentException error) {
@@ -192,7 +196,7 @@ public class DynamoAttributeValueUtils {
         }
     }
 
-    public static @Nullable ByteBuffer getByteBufferValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nullable ByteBuffer getByteBufferValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         try { 
             return asByteBuffer(attributes.get(attrName));
         } catch (IllegalArgumentException error) {
@@ -201,7 +205,7 @@ public class DynamoAttributeValueUtils {
     }
     
     public static @Nullable DateTime getDateTimeValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName, @Nonnull DateTimeFormatter dateTimeFormatter) 
-            throws IllegalArgumentException {
+            throws RepositoryServerException {
         try { 
             return asDateTime(attributes.get(attrName), dateTimeFormatter);
         } catch (IllegalArgumentException error) {
@@ -209,7 +213,7 @@ public class DynamoAttributeValueUtils {
         }
     }
 
-    public static @Nonnull String getRequiredStringValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nonnull String getRequiredStringValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         String strValue = getStringValue(attributes, attrName);
         if (strValue == null) {
             throw missingRequiredAttrException(attrName);
@@ -217,7 +221,7 @@ public class DynamoAttributeValueUtils {
         return strValue;
     }
     
-    public static @Nonnull List<String> getRequiredStringSetValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nonnull List<String> getRequiredStringSetValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         List<String> strValues = getStringSetValue(attributes, attrName);
         if (strValues == null) {
             throw missingRequiredAttrException(attrName);
@@ -225,7 +229,7 @@ public class DynamoAttributeValueUtils {
         return strValues;
     }
 
-    public static @Nonnull Double getRequiredDoubleValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nonnull Double getRequiredDoubleValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         Double numberValue = getDoubleValue(attributes, attrName);
         if (numberValue == null) {
             throw missingRequiredAttrException(attrName);
@@ -233,7 +237,7 @@ public class DynamoAttributeValueUtils {
         return numberValue;
     }
 
-    public static @Nonnull Long getRequiredLongValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nonnull Long getRequiredLongValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         Long numberValue = getLongValue(attributes, attrName);
         if (numberValue == null) {
             throw missingRequiredAttrException(attrName);
@@ -241,7 +245,7 @@ public class DynamoAttributeValueUtils {
         return numberValue;
     }
 
-    public static @Nonnull Integer getRequiredIntegerValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nonnull Integer getRequiredIntegerValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         Integer numberValue = getIntegerValue(attributes, attrName);
         if (numberValue == null) {
             throw missingRequiredAttrException(attrName);
@@ -249,7 +253,7 @@ public class DynamoAttributeValueUtils {
         return numberValue;
     }
 
-    public static @Nonnull ByteBuffer getRequiredByteBufferValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws IllegalArgumentException {
+    public static @Nonnull ByteBuffer getRequiredByteBufferValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName) throws RepositoryServerException {
         ByteBuffer byteBufferValue = getByteBufferValue(attributes, attrName);
         if (byteBufferValue == null) {
             throw missingRequiredAttrException(attrName);
@@ -258,7 +262,7 @@ public class DynamoAttributeValueUtils {
     }
     
     public static @Nonnull DateTime getRequiredDateTimeValue(@Nonnull Map<String, AttributeValue> attributes, @Nonnull String attrName, @Nonnull DateTimeFormatter dateTimeFormatter) 
-            throws IllegalArgumentException {
+            throws RepositoryServerException {
         DateTime dateTimeValue = getDateTimeValue(attributes, attrName, dateTimeFormatter);
         if (dateTimeValue == null) {
             throw missingRequiredAttrException(attrName);

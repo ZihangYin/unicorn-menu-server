@@ -6,9 +6,9 @@ import javax.annotation.Nullable;
 import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
 import com.unicorn.rest.repository.exception.ValidationException;
-import com.unicorn.rest.repository.model.PrincipalAuthorizationInfo;
+import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 
-public interface AuthorizationRepository {
+public interface AuthenticationRepository {
     
     /**
      * Get the principal for login_name
@@ -22,13 +22,13 @@ public interface AuthorizationRepository {
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
     
     /**
-     * Get the principal_authorization_info for principal
+     * Get the principal_authentication_info for principal
      * @param principal @Nullable
      * @return
      * @throws ValidationException if request is invalid
      * @throws ItemNotFoundException if user_principal attempted to get does not exist
      * @throws RepositoryServerException internal server error
      */
-    public @Nonnull PrincipalAuthorizationInfo getAuthorizationInfoForPrincipal(@Nullable Long principal) 
+    public @Nonnull PrincipalAuthenticationInfo getAuthenticationInfoForPrincipal(@Nullable Long principal) 
             throws ValidationException, ItemNotFoundException, RepositoryServerException;
 }
