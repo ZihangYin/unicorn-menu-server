@@ -1,24 +1,25 @@
 package com.unicorn.rest.server.filter.model;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import java.util.List;
+
+import javax.annotation.Nullable;
 import javax.ws.rs.core.SecurityContext;
-import javax.ws.rs.core.UriInfo;
+
+import com.unicorn.rest.activities.exception.AccessDeniedException;
+import com.unicorn.rest.repository.AccessControlPolicyRepository;
+import com.unicorn.rest.repository.exception.DuplicateKeyException;
+import com.unicorn.rest.repository.exception.RepositoryServerException;
+import com.unicorn.rest.repository.exception.ValidationException;
+import com.unicorn.rest.server.filter.AccessControlPolicyEvaluator;
 
 public class PrincipalSecurityContext implements SecurityContext {
-    
-    @Inject 
-    Provider<UriInfo> uriInfo;
-    
+ 
+    private AccessControlPolicyRepository accessControlPolicyRepository;
     private SubjectPrincipal subjectPrincipal;
     
-    public PrincipalSecurityContext(SubjectPrincipal subjectPrincipal) {
+    public PrincipalSecurityContext(SubjectPrincipal subjectPrincipal, AccessControlPolicyRepository accessControlPolicyRepository) {
         this.subjectPrincipal = subjectPrincipal;
-    }
-    
-    @Override
-    public SubjectPrincipal getUserPrincipal() {
-        return this.subjectPrincipal;
+        this.accessControlPolicyRepository = accessControlPolicyRepository;
     }
 
     @Override
@@ -31,10 +32,27 @@ public class PrincipalSecurityContext implements SecurityContext {
         return subjectPrincipal.getAuthenticationScheme().name();
     }
     
+    public SubjectPrincipal getSubjectPrincipal() {
+        return this.subjectPrincipal;
+    }
+    
     /**
      * Check if this Subject is permitted to perform an action or access a resource summarized by the
      * specified permission.
      */
+    public boolean isPermitted(@Nullable String action, @Nullable String resourceIdentifier) {
+        try {
+            List<String> allowingConditions = accessControlPolicyRepository.getAccessControlPolicy(action, resourceIdentifier);
+            return AccessControlPolicyEvaluator.evaluate(subjectPrincipal, allowingConditions);
+            
+        } catch (ValidationException | DuplicateKeyException
+                | RepositoryServerException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return false;
+    }
+    
     public boolean isPermitted(Permission permission) {
         return false;
     }
@@ -43,14 +61,18 @@ public class PrincipalSecurityContext implements SecurityContext {
      * Asserts this Subject is permitted for the specified permission.
      * If not, an Exception will be thrown.
      */
-    public void checkPermission(Permission permission) throws Exception {
+    public void checkPermission(@Nullable String action, @Nullable String resourceIdentifier) throws AccessDeniedException {
+        
+    }
+    
+    public void checkPermission(Permission permission) throws AccessDeniedException {
         
     }
     
     /**
      * Check if this Subject has the specified role
      */
-    public void checkRole(String roleIdentifier) throws Exception {
+    public void checkRole(String roleIdentifier) throws AccessDeniedException {
     }
     
     /**
@@ -65,6 +87,15 @@ public class PrincipalSecurityContext implements SecurityContext {
         return false;
     }
 
+    /**
+     * Please use getSubjectPrincipal()
+     */
+    @Deprecated
+    @Override
+    public SubjectPrincipal getUserPrincipal() {
+        return this.subjectPrincipal;
+    }
+    
     /**
      * Please use hasRole(String roleIdentifier) or checkRole(String roleIdentifier)
      */

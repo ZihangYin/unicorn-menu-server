@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jvnet.hk2.annotations.Service;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -49,6 +50,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
+@Service
 public class DynamoNameToPrincipalTable implements NameToPrincipalTable {
     private static final Logger LOG = LogManager.getLogger(DynamoNameToPrincipalTable.class);
 

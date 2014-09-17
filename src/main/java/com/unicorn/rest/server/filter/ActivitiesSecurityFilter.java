@@ -21,6 +21,7 @@ import com.unicorn.rest.activities.exception.InternalServerErrorException;
 import com.unicorn.rest.activities.exception.MissingAuthorizationException;
 import com.unicorn.rest.activities.exception.UnrecognizedAuthorizationSchemeException;
 import com.unicorn.rest.activities.exception.UnrecognizedIdentityException;
+import com.unicorn.rest.repository.AccessControlPolicyRepository;
 import com.unicorn.rest.repository.AuthorizationTokenRepository;
 import com.unicorn.rest.repository.exception.ItemNotFoundException;
 import com.unicorn.rest.repository.exception.RepositoryServerException;
@@ -35,11 +36,6 @@ import com.unicorn.rest.server.filter.model.UserPrincipal;
 @Priority(Priorities.AUTHENTICATION)
 public class ActivitiesSecurityFilter implements ContainerRequestFilter {
     private static final Logger LOG = LogManager.getLogger(ActivitiesSecurityFilter.class);
-    
-    protected static final String AUTHORIZATION_CODE_SEPARATOR = ":";
-    
-    @Inject
-    private AuthorizationTokenRepository tokenRepository;
     
     public enum AuthorizationScheme {
         
@@ -58,6 +54,16 @@ public class ActivitiesSecurityFilter implements ContainerRequestFilter {
         }
     }
 
+    protected static final String AUTHORIZATION_CODE_SEPARATOR = ":";
+    private AuthorizationTokenRepository tokenRepository;
+    private AccessControlPolicyRepository accessControlPolicyRepository;
+
+    @Inject
+    public ActivitiesSecurityFilter(AuthorizationTokenRepository tokenRepository, AccessControlPolicyRepository accessControlPolicyRepository) {
+        this.tokenRepository = tokenRepository;
+        this.accessControlPolicyRepository = accessControlPolicyRepository;
+    }
+    
     @Override
     public void filter(ContainerRequestContext requestContext)
             throws IOException {
@@ -65,7 +71,7 @@ public class ActivitiesSecurityFilter implements ContainerRequestFilter {
             String authorizationHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
             String[] authorizationCode = parseAuthorizationHeader(authorizationHeader);
             SubjectPrincipal subjectPrincipal = authenticate(authorizationCode);
-            requestContext.setSecurityContext(new PrincipalSecurityContext(subjectPrincipal));
+            requestContext.setSecurityContext(new PrincipalSecurityContext(subjectPrincipal, accessControlPolicyRepository));
             
         } catch (MissingAuthorizationException | UnrecognizedIdentityException | UnrecognizedAuthorizationSchemeException error) {
             LOG.info(String.format("Failed while attempting to fulfill authorization due to %s: ", BadRequestException.BAD_REQUEST), error);

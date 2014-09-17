@@ -32,7 +32,7 @@ public class SimpleFlakeKeyGenerator {
     private static final int LEFT_MOST_BITS_FOR_TIMESTAMP = 42;
     
     /**
-     * Locally generate a globally unique key
+     * Locally generate a universally unique key
      * @return @Nonnull
      */
     public static @Nonnull ByteBuffer generateKeyByteBuffer() {
@@ -40,7 +40,7 @@ public class SimpleFlakeKeyGenerator {
     }
     
     /**
-     * Locally generate a globally unique key
+     * Locally generate a universally unique key
      * @return @Nonnull
      */
     public static @Nonnull Long generateKey() {

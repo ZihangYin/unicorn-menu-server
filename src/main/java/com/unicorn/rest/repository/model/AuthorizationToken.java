@@ -71,7 +71,7 @@ public class AuthorizationToken {
     /**
      * TODO: In order to prevent brute-force attack and better security, we should generate token value based on client_id 
      * or any salt generated on the server side and assign that token to the client. 
-     * Still, we need to guarantee that the token value is globally unique.
+     * Still, we need to guarantee that the token value is universally unique.
      * 
      * For now, we require the client to provide both the principal and token to relieve this problem.
      */

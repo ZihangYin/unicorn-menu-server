@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jvnet.hk2.annotations.Service;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -40,6 +41,7 @@ import com.unicorn.rest.repository.model.DisplayName;
 import com.unicorn.rest.repository.model.PrincipalAuthenticationInfo;
 import com.unicorn.rest.repository.table.CustomerProfileTable;
 
+@Service
 public class DynamoCustomerProfileTable implements CustomerProfileTable {
     private static final Logger LOG = LogManager.getLogger(DynamoCustomerProfileTable.class);
 

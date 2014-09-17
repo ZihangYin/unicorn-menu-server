@@ -4,6 +4,7 @@ import javax.inject.Singleton;
 
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
+import com.unicorn.rest.repository.AccessControlPolicyRepository;
 import com.unicorn.rest.repository.AuthorizationTokenRepository;
 import com.unicorn.rest.repository.UserRepository;
 import com.unicorn.rest.repository.impl.dynamodb.DynamoAuthorizationTokenTable;
@@ -30,6 +31,7 @@ public class RepositoryBinder extends AbstractBinder {
         
         bindFactory(AuthorizationTokenRepositoryFactory.class).to(AuthorizationTokenRepository.class).in(Singleton.class);
         bindFactory(UserRepositoryFactory.class).to(UserRepository.class).in(Singleton.class);
+        bindFactory(AccessControlPolicyRepositoryFactory.class).to(AccessControlPolicyRepository.class).in(Singleton.class);
         
     }
 }

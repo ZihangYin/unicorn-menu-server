@@ -15,7 +15,7 @@ import com.unicorn.rest.repository.model.Name;
 public interface UserRepository extends AuthenticationRepository {
     
     /**
-     * Generate globally unique user_principal using SimpleflakeKeyGenerator
+     * Generate universally unique user_principal using SimpleflakeKeyGenerator
      * Create user_principal with password and user_display_name into the USER_PROFILE table
      * Then create the user_name to user_principal mapping in the NAME_TO_PRINCIPAL_TABLE 
      * 
